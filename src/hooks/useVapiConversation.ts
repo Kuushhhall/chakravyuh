@@ -1,10 +1,17 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Vapi, { VapiClientToServerMessage } from '@vapi-ai/web';
+import Vapi from '@vapi-ai/web';
 
+// Define the message type for our internal use
 type VapiMessage = {
   text: string;
   isUser: boolean;
+};
+
+// Define the message type that the Vapi SDK expects
+type VapiClientMessage = {
+  type: 'message';
+  content: string;
 };
 
 interface UseVapiConversationProps {
@@ -45,6 +52,8 @@ export const useVapiConversation = ({
       const client = new Vapi(apiKey);
       
       // Setup event listeners for the client
+      // Note: Different versions of the SDK may use different event names
+      // We're using the string literals directly to avoid TypeScript errors
       client.on('speech.start', () => {
         setIsSpeaking(true);
         if (onSpeakingStart) onSpeakingStart();
@@ -96,7 +105,7 @@ export const useVapiConversation = ({
 
       // Configure and start the conversation
       await client.start({
-        assistantId: assistantId,
+        assistantId,
         enableAudio: true,
         welcome: initialMessage || '',
       });
@@ -134,7 +143,7 @@ export const useVapiConversation = ({
       try {
         // Send a message using the appropriate method
         // Convert string to proper message format based on Vapi docs
-        const vapiMessage: VapiClientToServerMessage = {
+        const vapiMessage: VapiClientMessage = {
           type: 'message',
           content: message
         };

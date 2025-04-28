@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useVapiConversation } from "@/hooks/useVapiConversation";
 import { useToast } from "@/hooks/use-toast";
@@ -80,14 +81,12 @@ const ImmersiveClassroom: React.FC<ImmersiveClassroomProps> = ({
         // Extract text for whiteboard animation
         setCurrentText(message.text);
         
-        // Example: Generate basic timeline commands from AI text
-        // In a real implementation, this would be more sophisticated
-        const words = message.text.split(/\s+/);
+        // Generate timeline commands from AI text
         const newTimelineCommand: TimelineCommand = {
           type: 'text',
           time: Date.now(),
           content: message.text,
-          position: { x: 50, y: 100 },
+          position: { x: 50, y: 100 + (timelineCommands.length * 50) % 400 }, // Position text in different Y positions
           fontSize: 24,
           color: '#333',
           id: `text-${Date.now()}`,

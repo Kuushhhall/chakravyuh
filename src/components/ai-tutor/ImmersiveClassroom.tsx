@@ -118,7 +118,7 @@ const ImmersiveClassroom: React.FC<ImmersiveClassroomProps> = ({
       // Initial message for the AI tutor
       const initialMessage = `You are ${teacher.name}, a ${teacher.title}. Greet the student warmly and ask what specific topic they'd like to learn about today. You should explain concepts step by step as if writing on a whiteboard, mentioning when you would draw diagrams or write key points.`;
       
-      // Start the Vapi session
+      // Start the Vapi session with the updated parameter format
       await vapiConversation.startSession({
         apiKey,
         assistantId,

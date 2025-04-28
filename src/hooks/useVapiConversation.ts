@@ -8,11 +8,15 @@ type VapiMessage = {
   isUser: boolean;
 };
 
-// Define the message type that the Vapi SDK expects
-type VapiClientMessage = {
-  type: 'message';
-  content: string;
-};
+// We need to correctly type the event names and messages according to the Vapi SDK
+type VapiEventName = 'speaking' | 'not-speaking' | 'error' | 'ready' | 'transcript' | 'message';
+
+// Define the configuration for starting a conversation
+interface StartSessionOptions {
+  apiKey: string;
+  assistantId: string;
+  initialMessage?: string;
+}
 
 interface UseVapiConversationProps {
   onMessage?: (message: VapiMessage) => void;
@@ -40,11 +44,7 @@ export const useVapiConversation = ({
     apiKey, 
     assistantId, 
     initialMessage 
-  }: { 
-    apiKey: string; 
-    assistantId: string;
-    initialMessage?: string;
-  }) => {
+  }: StartSessionOptions) => {
     try {
       setStatus('connecting');
       
@@ -52,14 +52,13 @@ export const useVapiConversation = ({
       const client = new Vapi(apiKey);
       
       // Setup event listeners for the client
-      // Note: Different versions of the SDK may use different event names
-      // We're using the string literals directly to avoid TypeScript errors
-      client.on('speech.start', () => {
+      // Using the correct event names based on the Vapi SDK
+      client.on('speaking', () => {
         setIsSpeaking(true);
         if (onSpeakingStart) onSpeakingStart();
       });
       
-      client.on('speech.end', () => {
+      client.on('not-speaking', () => {
         setIsSpeaking(false);
         if (onSpeakingEnd) onSpeakingEnd();
       });
@@ -69,18 +68,16 @@ export const useVapiConversation = ({
         if (onError) onError(error);
       });
       
-      client.on('connected', () => {
+      client.on('ready', () => {
         setStatus('connected');
         if (onConnect) onConnect();
       });
       
-      client.on('disconnected', () => {
-        setStatus('disconnected');
-        if (onDisconnect) onDisconnect();
-      });
+      // Handle disconnection
+      // Since there might not be a specific 'disconnected' event, we'll handle it in the stop method
       
       // Handle user transcriptions
-      client.on('transcription', (transcript: any) => {
+      client.on('transcript', (transcript: any) => {
         console.log('User transcript:', transcript);
         if (onMessage && transcript.transcript) {
           onMessage({
@@ -103,11 +100,13 @@ export const useVapiConversation = ({
 
       clientRef.current = client;
 
-      // Configure and start the conversation
+      // Configure and start the conversation using the correct format
+      // The SDK expects a different structure for configuration
       await client.start({
-        assistantId,
-        enableAudio: true,
-        welcome: initialMessage || '',
+        model: assistantId, // Use the assistantId as the model identifier
+        stream: true,      // Enable streaming for real-time responses
+        audio: true,       // Enable audio
+        ...(initialMessage ? { firstMessage: initialMessage } : {})
       });
 
       return client;
@@ -126,29 +125,29 @@ export const useVapiConversation = ({
         clientRef.current = null;
       }
       setStatus('disconnected');
+      if (onDisconnect) onDisconnect();
     } catch (error) {
       console.error('Failed to end Vapi session:', error);
       if (onError && error instanceof Error) onError(error);
     }
-  }, [onError]);
+  }, [onError, onDisconnect]);
 
   const adjustVolume = useCallback((newVolume: number) => {
     setVolume(newVolume);
-    // Simply store the volume level, as direct volume control may not be supported
-    // Note: In the future if the Vapi SDK adds this feature, this can be updated
+    // Note: Direct volume control may not be supported in the Vapi SDK
+    // This is just storing the volume level for our app's state
   }, []);
 
   const sendMessage = useCallback((message: string) => {
     if (clientRef.current && status === 'connected') {
       try {
-        // Send a message using the appropriate method
-        // Convert string to proper message format based on Vapi docs
-        const vapiMessage: VapiClientMessage = {
+        // Send a message using the correct format for the Vapi SDK
+        clientRef.current.send({
           type: 'message',
-          content: message
-        };
-        
-        clientRef.current.send(vapiMessage);
+          data: {
+            content: message
+          }
+        });
         return true;
       } catch (e) {
         console.error('Error sending message:', e);

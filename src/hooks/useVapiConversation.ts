@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Vapi from '@vapi-ai/web';
+import Vapi, { VapiClientToServerMessage } from '@vapi-ai/web';
 
 type VapiMessage = {
   text: string;
@@ -41,18 +41,16 @@ export const useVapiConversation = ({
     try {
       setStatus('connecting');
       
-      // Create the Vapi client with API key as constructor parameter
-      const client = new Vapi({
-        apiKey: apiKey
-      });
+      // Create the Vapi client with API key
+      const client = new Vapi(apiKey);
       
       // Setup event listeners for the client
-      client.on('speech-start', () => {
+      client.on('speech.start', () => {
         setIsSpeaking(true);
         if (onSpeakingStart) onSpeakingStart();
       });
       
-      client.on('speech-end', () => {
+      client.on('speech.end', () => {
         setIsSpeaking(false);
         if (onSpeakingEnd) onSpeakingEnd();
       });
@@ -62,18 +60,18 @@ export const useVapiConversation = ({
         if (onError) onError(error);
       });
       
-      client.on('connect', () => {
+      client.on('connected', () => {
         setStatus('connected');
         if (onConnect) onConnect();
       });
       
-      client.on('disconnect', () => {
+      client.on('disconnected', () => {
         setStatus('disconnected');
         if (onDisconnect) onDisconnect();
       });
       
       // Handle user transcriptions
-      client.on('transcript', (transcript: any) => {
+      client.on('transcription', (transcript: any) => {
         console.log('User transcript:', transcript);
         if (onMessage && transcript.transcript) {
           onMessage({
@@ -97,14 +95,11 @@ export const useVapiConversation = ({
       clientRef.current = client;
 
       // Configure and start the conversation
-      const startOptions = {
+      await client.start({
         assistantId: assistantId,
-        audioEnabled: true,
-        welcomeMessage: initialMessage || '',
-      };
-
-      // Start the conversation
-      await client.start(startOptions);
+        enableAudio: true,
+        welcome: initialMessage || '',
+      });
 
       return client;
     } catch (error) {
@@ -130,22 +125,21 @@ export const useVapiConversation = ({
 
   const adjustVolume = useCallback((newVolume: number) => {
     setVolume(newVolume);
-    // Update the volume on the active client if it exists
-    if (clientRef.current) {
-      try {
-        // Set the volume according to the docs
-        clientRef.current.setVolume(newVolume);
-      } catch (e) {
-        console.warn('Volume adjustment not supported:', e);
-      }
-    }
+    // Simply store the volume level, as direct volume control may not be supported
+    // Note: In the future if the Vapi SDK adds this feature, this can be updated
   }, []);
 
   const sendMessage = useCallback((message: string) => {
     if (clientRef.current && status === 'connected') {
       try {
         // Send a message using the appropriate method
-        clientRef.current.send(message);
+        // Convert string to proper message format based on Vapi docs
+        const vapiMessage: VapiClientToServerMessage = {
+          type: 'message',
+          content: message
+        };
+        
+        clientRef.current.send(vapiMessage);
         return true;
       } catch (e) {
         console.error('Error sending message:', e);

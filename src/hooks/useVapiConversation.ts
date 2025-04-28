@@ -41,13 +41,12 @@ export const useVapiConversation = ({
     try {
       setStatus('connecting');
       
-      // Create the Vapi client according to documentation
-      const client = new Vapi();
+      // Create the Vapi client with API key as constructor parameter
+      const client = new Vapi({
+        apiKey: apiKey
+      });
       
-      // Initialize with API key
-      client.setApiKey(apiKey);
-      
-      // Setup event listeners
+      // Setup event listeners for the client
       client.on('speech-start', () => {
         setIsSpeaking(true);
         if (onSpeakingStart) onSpeakingStart();
@@ -63,7 +62,7 @@ export const useVapiConversation = ({
         if (onError) onError(error);
       });
       
-      client.on('ready', () => {
+      client.on('connect', () => {
         setStatus('connected');
         if (onConnect) onConnect();
       });
@@ -97,16 +96,11 @@ export const useVapiConversation = ({
 
       clientRef.current = client;
 
-      // Configure the conversation
+      // Configure and start the conversation
       const startOptions = {
-        assistant: {
-          id: assistantId
-        },
-        conversation: {
-          audioEnabled: true,
-          welcome: initialMessage ? true : false,
-          welcomeMessage: initialMessage || ''
-        }
+        assistantId: assistantId,
+        audioEnabled: true,
+        welcomeMessage: initialMessage || '',
       };
 
       // Start the conversation
@@ -139,8 +133,8 @@ export const useVapiConversation = ({
     // Update the volume on the active client if it exists
     if (clientRef.current) {
       try {
-        // Set the volume using the appropriate method according to the docs
-        clientRef.current.setAudioVolume(newVolume);
+        // Set the volume according to the docs
+        clientRef.current.setVolume(newVolume);
       } catch (e) {
         console.warn('Volume adjustment not supported:', e);
       }
@@ -151,7 +145,7 @@ export const useVapiConversation = ({
     if (clientRef.current && status === 'connected') {
       try {
         // Send a message using the appropriate method
-        clientRef.current.sendMessage(message);
+        clientRef.current.send(message);
         return true;
       } catch (e) {
         console.error('Error sending message:', e);

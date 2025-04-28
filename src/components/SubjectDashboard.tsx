@@ -1,10 +1,15 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { StudyPlanItem } from "@/components/StudyPlanItem";
 import { Card, CardContent } from "@/components/ui-custom/Card";
 import { Button } from "@/components/ui-custom/Button";
 import { Progress } from "@/components/ui-custom/Progress";
-import { BadgeCheck, Book, Calendar, LineChart, Clock, Filter, LucideIcon, Target } from "lucide-react";
+import { 
+  BadgeCheck, Book, Calendar, LineChart, Clock, Filter, 
+  LucideIcon, Target, Sparkles, Search, Plus 
+} from "lucide-react";
+import { FloatingActionButton, FloatingActionItem } from "@/components/ui-custom/FloatingActionButton";
 
 // Mock data for subjects
 const subjectsData = [
@@ -85,11 +90,12 @@ interface StatCardProps {
   icon: LucideIcon;
   description?: string;
   suffix?: string;
+  color?: string;
 }
 
-function StatCard({ title, value, icon: Icon, description, suffix }: StatCardProps) {
+function StatCard({ title, value, icon: Icon, description, suffix, color = "bg-primary" }: StatCardProps) {
   return (
-    <Card>
+    <Card className="glass-card overflow-hidden">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div>
@@ -97,8 +103,8 @@ function StatCard({ title, value, icon: Icon, description, suffix }: StatCardPro
             <p className="text-2xl font-bold">{value}{suffix}</p>
             {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
           </div>
-          <div className="p-3 rounded-full bg-secondary/40">
-            <Icon className="h-5 w-5" />
+          <div className={`p-3 rounded-full ${color}/10`}>
+            <Icon className={`h-5 w-5 text-${color}`} />
           </div>
         </div>
       </CardContent>
@@ -118,26 +124,27 @@ function PriorityItem({ name, subject, urgency, reason }: PriorityItemProps) {
   
   const getUrgencyColor = () => {
     switch (urgency) {
-      case "high": return "bg-red-100 text-red-800";
-      case "medium": return "bg-amber-100 text-amber-800";
-      case "low": return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "high": return "bg-red-900/20 text-red-400";
+      case "medium": return "bg-amber-900/20 text-amber-400";
+      case "low": return "bg-green-900/20 text-green-400";
+      default: return "bg-gray-900/20 text-gray-400";
     }
   };
   
   return (
-    <div className="flex items-center justify-between p-3 border-b last:border-b-0">
+    <div className="flex items-center justify-between p-4 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors">
       <div>
-        <h4 className="font-medium">{name}</h4>
+        <h4 className="font-medium text-foreground">{name}</h4>
         <p className="text-xs text-muted-foreground">{subject} • {reason}</p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor()}`}>
           {urgency.charAt(0).toUpperCase() + urgency.slice(1)}
         </span>
         <Button 
           size="sm" 
           onClick={() => navigate(`/ai-tutor`)}
+          className="bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary text-white shadow-glow-sm"
         >
           Study
         </Button>
@@ -155,18 +162,23 @@ export function SubjectDashboard() {
   };
   
   return (
-    <div className="container py-8">
+    <div className="container py-8 relative animate-enter">
+      {/* Background aurora effect */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        <div className="aurora-bg w-full h-full"></div>
+      </div>
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Your Study Dashboard</h1>
+          <h1 className="text-4xl font-bold mb-2 text-gradient">Your Study Dashboard</h1>
           <p className="text-muted-foreground">Track your progress and plan your study sessions</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
+          <Button variant="outline" size="sm" className="flex items-center gap-1 glass">
             <Filter className="h-4 w-4" />
             Filter
           </Button>
-          <Button size="sm" className="flex items-center gap-1">
+          <Button size="sm" className="flex items-center gap-1 bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary text-white">
             <Calendar className="h-4 w-4" />
             Study Planner
           </Button>
@@ -181,36 +193,43 @@ export function SubjectDashboard() {
           suffix=" days"
           icon={BadgeCheck} 
           description="Keep going!" 
+          color="text-yellow-400"
         />
         <StatCard 
           title="Questions Completed" 
           value={studyStats.questionsCompleted} 
           icon={Target} 
           description="10 today" 
+          color="text-green-400"
         />
         <StatCard 
           title="Hours Studied" 
           value={studyStats.hoursSpent} 
           icon={Clock} 
-          description="2 hours today" 
+          description="2 hours today"
+          color="text-blue-400" 
         />
         <StatCard 
           title="Mastery Level" 
           value={studyStats.mastery} 
           suffix="%"
           icon={LineChart} 
-          description="Increasing steadily" 
+          description="Increasing steadily"
+          color="text-purple-400" 
         />
       </div>
       
       {/* Priority Section */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Study Priorities</h2>
-          <Button variant="link" size="sm">View All</Button>
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-yellow-400" />
+            <h2 className="text-xl font-bold">Study Priorities</h2>
+          </div>
+          <Button variant="link" size="sm" className="text-primary">View All</Button>
         </div>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="glass-card overflow-hidden transition-all duration-300 hover:shadow-glow-sm">
+          <CardContent className="p-0">
             {recommendedSubjects.map((item, index) => (
               <PriorityItem 
                 key={index} 
@@ -227,13 +246,16 @@ export function SubjectDashboard() {
       {/* Overall Progress */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Overall Progress</h2>
+          <div className="flex items-center gap-2">
+            <LineChart className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-bold">Overall Progress</h2>
+          </div>
           <div className="flex gap-2">
             <Button 
               variant={view === "grid" ? "default" : "outline"} 
               size="sm" 
               onClick={() => setView("grid")}
-              className="flex items-center gap-1"
+              className={view === "grid" ? "bg-gradient-to-r from-primary to-secondary text-white" : "glass"}
             >
               Grid
             </Button>
@@ -241,7 +263,7 @@ export function SubjectDashboard() {
               variant={view === "list" ? "default" : "outline"} 
               size="sm" 
               onClick={() => setView("list")}
-              className="flex items-center gap-1"
+              className={view === "list" ? "bg-gradient-to-r from-primary to-secondary text-white" : "glass"}
             >
               List
             </Button>
@@ -263,13 +285,13 @@ export function SubjectDashboard() {
             ))}
           </div>
         ) : (
-          <Card>
-            <CardContent className="p-4">
+          <Card className="glass-card overflow-hidden">
+            <CardContent className="p-0">
               {subjectsData.map((subject, index) => (
-                <div key={subject.id} className="py-4 border-b last:border-b-0">
-                  <div className="flex justify-between items-center mb-2">
+                <div key={subject.id} className="p-4 border-b border-white/5 last:border-b-0 hover:bg-white/5 transition-colors">
+                  <div className="flex justify-between items-center mb-3">
                     <div>
-                      <h3 className="font-medium">{subject.subject}</h3>
+                      <h3 className="font-medium text-lg">{subject.subject}</h3>
                       <div className="flex items-center text-sm text-muted-foreground">
                         <Clock className="h-3 w-3 mr-1" />
                         <span>{subject.duration}</span>
@@ -279,6 +301,7 @@ export function SubjectDashboard() {
                       size="sm" 
                       variant="outline"
                       onClick={() => handleStudyClick(subject.id)}
+                      className="glass hover:bg-white/10 hover:shadow-glow-sm transition-all duration-300"
                     >
                       View Details
                     </Button>
@@ -289,14 +312,15 @@ export function SubjectDashboard() {
                         <span>Progress</span>
                         <span>{subject.progress}%</span>
                       </div>
-                      <Progress value={subject.progress} className="h-2" />
+                      <Progress value={subject.progress} className="h-2" 
+                        indicatorClassName="bg-gradient-to-r from-primary to-secondary" />
                     </div>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                       subject.difficulty === "easy" 
-                        ? "bg-green-100 text-green-800" 
+                        ? "bg-green-900/20 text-green-400" 
                         : subject.difficulty === "medium" 
-                          ? "bg-amber-100 text-amber-800" 
-                          : "bg-red-100 text-red-800"
+                          ? "bg-amber-900/20 text-amber-400" 
+                          : "bg-red-900/20 text-red-400"
                     }`}>
                       {subject.difficulty.charAt(0).toUpperCase() + subject.difficulty.slice(1)}
                     </span>
@@ -311,13 +335,16 @@ export function SubjectDashboard() {
       {/* Recommended Resources */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Recommended Resources</h2>
-          <Button variant="link" size="sm">View All</Button>
+          <div className="flex items-center gap-2">
+            <Book className="h-5 w-5 text-accent" />
+            <h2 className="text-xl font-bold">Recommended Resources</h2>
+          </div>
+          <Button variant="link" size="sm" className="text-primary">View All</Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-full bg-blue-100 text-blue-800">
+          <Card className="glass-card hover:shadow-glow-sm transition-all duration-300 group">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 rounded-full bg-blue-900/20 text-blue-400 group-hover:scale-110 transition-transform duration-300">
                 <Book className="h-5 w-5" />
               </div>
               <div>
@@ -326,9 +353,9 @@ export function SubjectDashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-full bg-green-100 text-green-800">
+          <Card className="glass-card hover:shadow-glow-sm transition-all duration-300 group">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 rounded-full bg-green-900/20 text-green-400 group-hover:scale-110 transition-transform duration-300">
                 <Book className="h-5 w-5" />
               </div>
               <div>
@@ -337,9 +364,9 @@ export function SubjectDashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-full bg-purple-100 text-purple-800">
+          <Card className="glass-card hover:shadow-glow-sm transition-all duration-300 group">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3 rounded-full bg-purple-900/20 text-purple-400 group-hover:scale-110 transition-transform duration-300">
                 <Book className="h-5 w-5" />
               </div>
               <div>
@@ -350,6 +377,25 @@ export function SubjectDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Floating Action Button */}
+      <FloatingActionButton>
+        <FloatingActionItem
+          icon={<Plus className="h-5 w-5 text-white" />}
+          label="Quick Study"
+          onClick={() => navigate('/ai-tutor')}
+        />
+        <FloatingActionItem
+          icon={<Search className="h-5 w-5 text-white" />}
+          label="Find Resources"
+          onClick={() => navigate('/resources')}
+        />
+        <FloatingActionItem
+          icon={<Calendar className="h-5 w-5 text-white" />}
+          label="Schedule"
+          onClick={() => navigate('/study-schedule')}
+        />
+      </FloatingActionButton>
     </div>
   );
 }

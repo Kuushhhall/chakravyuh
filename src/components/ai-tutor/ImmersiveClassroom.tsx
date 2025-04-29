@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useVapiConversation } from "@/hooks/useVapiConversation";
 import { useToast } from "@/hooks/use-toast";
@@ -51,7 +50,7 @@ const ImmersiveClassroom: React.FC<ImmersiveClassroomProps> = ({
     return () => window.removeEventListener('resize', updateWhiteboardSize);
   }, []);
 
-  // Use our custom Vapi hook
+  // Use our custom Vapi hook with the updated property names
   const vapiConversation = useVapiConversation({
     onConnect: () => {
       console.log("Connected to Vapi AI");

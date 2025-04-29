@@ -8,9 +8,6 @@ type VapiMessage = {
   isUser: boolean;
 };
 
-// Define correct Vapi event names based on their updated SDK
-type VapiEventName = 'speech.start' | 'speech.end' | 'error' | 'connected' | 'disconnected' | 'transcription' | 'message';
-
 // Define the configuration for starting a conversation
 interface StartSessionOptions {
   apiKey: string;
@@ -52,7 +49,7 @@ export const useVapiConversation = ({
       const client = new Vapi(apiKey);
       
       // Setup event listeners for the client
-      // Using the correct event names based on the updated Vapi SDK
+      // Note: We're using "on" but the events need to match the actual SDK events
       client.on('speech.start', () => {
         setIsSpeaking(true);
         if (onSpeakingStart) onSpeakingStart();
@@ -103,9 +100,9 @@ export const useVapiConversation = ({
 
       clientRef.current = client;
 
-      // Configure and start the conversation using the correct format
+      // Configure and start the conversation using the correct format for Vapi SDK
       await client.start({
-        assistantID: assistantId, // Use assistantID instead of model
+        assistantId, // Use assistantId as the correct property
         stream: true,      // Enable streaming for real-time responses
         audio: true,       // Enable audio
         ...(initialMessage ? { firstMessage: initialMessage } : {})
@@ -143,12 +140,10 @@ export const useVapiConversation = ({
   const sendMessage = useCallback((message: string) => {
     if (clientRef.current && status === 'connected') {
       try {
-        // Send a message using the correct format for the updated Vapi SDK
+        // Send a message using the correct format for the Vapi SDK
         clientRef.current.send({
           type: 'say',
-          data: {
-            content: message
-          }
+          content: message // Use content directly instead of nested in data
         });
         return true;
       } catch (e) {

@@ -1,4 +1,3 @@
-
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -6,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import SignIn from "./pages/SignIn";
@@ -57,44 +55,16 @@ const App = () => (
               <Route path="/email-signin" element={<EmailSignIn />} />
               <Route path="/phone-signin" element={<PhoneSignIn />} />
               
-              {/* Content routes requiring authentication */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/ai-tutor" element={
-                <ProtectedRoute>
-                  <AITutorPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } />
-              <Route path="/leaderboard" element={
-                <ProtectedRoute>
-                  <Leaderboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/practice-tests" element={
-                <ProtectedRoute>
-                  <PracticeTests />
-                </ProtectedRoute>
-              } />
-              <Route path="/test-results/:testId" element={
-                <ProtectedRoute>
-                  <TestResults />
-                </ProtectedRoute>
-              } />
-              <Route path="/study-schedule" element={
-                <ProtectedRoute>
-                  <StudySchedule />
-                </ProtectedRoute>
-              } />
+              {/* Content routes - no authentication required */}
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/ai-tutor" element={<AITutorPage />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/practice-tests" element={<PracticeTests />} />
+              <Route path="/test-results/:testId" element={<TestResults />} />
+              <Route path="/study-schedule" element={<StudySchedule />} />
               
-              {/* Semi-protected routes - visible to all but enhanced with auth */}
+              {/* Other routes */}
               <Route path="/exam-select" element={<ExamSelect />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/subject/:subjectId" element={<SubjectDetail />} />

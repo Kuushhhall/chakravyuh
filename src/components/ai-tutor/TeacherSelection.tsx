@@ -1,107 +1,73 @@
 
-import { useState } from "react";
-import { Teacher } from "@/data/teacherProfiles";
+import { Card, CardContent } from "@/components/ui-custom/Card";
 import { Button } from "@/components/ui-custom/Button";
-import { motion } from "framer-motion";
+import { PageHeader } from "@/components/ui/page-header";
+
+type Teacher = {
+  id: string;
+  name: string;
+  title: string;
+  avatar: string;
+  description: string;
+  subjects: string[];
+  voiceId: string;
+};
 
 interface TeacherSelectionProps {
   teachers: Teacher[];
   onTeacherSelect: (teacherId: string) => void;
 }
 
-export default function TeacherSelection({
-  teachers,
-  onTeacherSelect,
-}: TeacherSelectionProps) {
-  const [hoveredTeacher, setHoveredTeacher] = useState<string | null>(null);
-
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        when: "beforeChildren",
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-    },
-  };
-
+export default function TeacherSelection({ teachers, onTeacherSelect }: TeacherSelectionProps) {
   return (
-    <div className="max-w-6xl mx-auto py-8">
-      <div className="mb-12 text-center">
-        <h1 className="text-4xl font-bold mb-4">Choose Your AI Tutor</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Select a tutor with expertise in your subject area for a personalized
-          learning experience.
-        </p>
-      </div>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <PageHeader
+        title="Choose Your AI Tutor"
+        description="Select a specialized tutor to begin your personalized JEE preparation journey"
+        gradient
+      />
 
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
         {teachers.map((teacher) => (
-          <motion.div
+          <Card 
             key={teacher.id}
-            className={`bg-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border ${
-              hoveredTeacher === teacher.id
-                ? "ring-2 ring-primary scale-[1.02]"
-                : ""
-            }`}
-            onMouseEnter={() => setHoveredTeacher(teacher.id)}
-            onMouseLeave={() => setHoveredTeacher(null)}
-            variants={itemVariants}
+            className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 duration-300"
+            onClick={() => onTeacherSelect(teacher.id)}
           >
-            <div className="h-64 overflow-hidden">
-              <img
-                src={teacher.avatar}
-                alt={teacher.name}
-                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-              />
-            </div>
-
-            <div className="p-6">
-              <h3 className="text-2xl font-bold mb-1">{teacher.name}</h3>
-              <div className="text-primary text-sm font-medium mb-4">
-                {teacher.title}
+            <CardContent className="p-6 flex flex-col items-center text-center">
+              <div className="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-primary/20 bg-secondary/5">
+                {/* Image container with CSS to center the face */}
+                <div className="w-full h-full relative">
+                  <img
+                    src={teacher.avatar}
+                    alt={teacher.name}
+                    className="absolute w-[120%] h-[120%] object-cover object-center top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                  />
+                </div>
               </div>
-
-              <p className="text-muted-foreground mb-4">
-                {teacher.description}
-              </p>
-
-              <div className="mb-6 flex flex-wrap gap-2">
+              <h3 className="text-xl font-bold">{teacher.name}</h3>
+              <p className="text-primary font-medium">{teacher.title}</p>
+              <p className="text-muted-foreground mt-2 text-sm">{teacher.description}</p>
+              <div className="flex flex-wrap gap-2 justify-center mt-4">
                 {teacher.subjects.map((subject) => (
                   <span
                     key={subject}
-                    className="px-2 py-1 bg-primary/10 rounded-full text-xs font-medium text-primary"
+                    className="bg-secondary/40 px-2 py-1 rounded-full text-xs"
                   >
                     {subject}
                   </span>
                 ))}
               </div>
-
-              <Button
-                className="w-full"
-                onClick={() => onTeacherSelect(teacher.id)}
+              <Button 
+                className="mt-6 w-full" 
+                variant="default"
               >
-                Learn with {teacher.name.split(" ")[0]}
+                Start Learning
               </Button>
-            </div>
-          </motion.div>
+            </CardContent>
+          </Card>
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 }

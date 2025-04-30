@@ -1,208 +1,266 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import url('./styles/design-system.css');
 
 @layer base {
   :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5% 64.9%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-    
+
     --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
-    
+
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    
-    --primary: 252 87% 67%;
+
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 98%;
-    
-    --secondary: 253 51% 55%;
+
+    --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
-    
+
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-    
-    --accent: 191 97% 77%;
-    --accent-foreground: 240 5.9% 10%;
-    
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    
+
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 252 87% 67%;
-    
-    --radius: 1rem;
+    --ring: 240 4.9% 83.9%;
 
-    --sidebar-background: 240 10% 3.9%;
-    --sidebar-foreground: 0 0% 98%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-primary: 252 87% 67%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 191 97% 77%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-ring: 252 87% 67%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
-  
+}
+
+@layer base {
   * {
-    @apply border-border antialiased selection:bg-primary/20 selection:text-primary-foreground;
-    font-family: 'Inter', sans-serif;
+    @apply border-border;
   }
 
-  html {
-    @apply scroll-smooth;
-  }
-  
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
-    background-image: 
-      radial-gradient(circle at top right, rgba(121, 68, 154, 0.13), transparent 35%),
-      radial-gradient(circle at bottom left, rgba(77, 87, 222, 0.13), transparent 35%);
-    background-attachment: fixed;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    scroll-behavior: smooth;
   }
 }
 
-/* Import Patrick Hand font for handwritten style */
-@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
+@layer components {
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-lg border border-white/20 shadow-xl;
+  }
 
-/* Glassmorphism utilities */
-.glass {
-  @apply backdrop-blur-lg bg-white/5 border border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)];
+  .glass-panel {
+    @apply bg-white/40 backdrop-blur-md border border-white/20;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600;
+  }
+
+  .hover-scale {
+    @apply transition-transform duration-300 hover:scale-[1.02];
+  }
+
+  .button-primary {
+    @apply rounded-lg bg-primary text-primary-foreground px-4 py-2 hover:bg-primary/90 transition-all duration-300 hover:shadow-md active:scale-[0.98];
+  }
+
+  .button-secondary {
+    @apply rounded-lg bg-secondary text-secondary-foreground px-4 py-2 hover:bg-secondary/80 transition-all duration-300 active:scale-[0.98];
+  }
+
+  .input-primary {
+    @apply bg-secondary/50 border border-secondary rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300;
+  }
+
+  .study-card {
+    @apply p-6 rounded-xl border bg-card hover:shadow-md transition-all duration-300 hover:-translate-y-1;
+  }
+
+  .progress-bar {
+    @apply h-2 rounded-full bg-secondary overflow-hidden;
+  }
+
+  .progress-value {
+    @apply h-full bg-primary rounded-full;
+  }
+  
+  /* New futuristic components */
+  .neo-card {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl;
+  }
+  
+  .glow-border {
+    @apply border border-primary/30 shadow-[0_0_15px_rgba(59,130,246,0.3)];
+  }
+  
+  .text-glow {
+    @apply text-primary shadow-[0_0_10px_rgba(59,130,246,0.5)];
+  }
+  
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600;
+  }
+  
+  .animated-bg {
+    @apply relative overflow-hidden;
+    background: linear-gradient(-45deg, #1e3a8a10, #3b82f610, #7e22ce10, #4f46e510);
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+  }
+  
+  /* New UI components */
+  .card-hover-effect {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  .floating-card {
+    @apply shadow-xl rounded-xl border border-white/10 overflow-hidden hover:shadow-primary/20 transition-all duration-300;
+  }
+  
+  .glassmorphism {
+    @apply bg-white/10 backdrop-blur-md border border-white/20 dark:bg-black/20 dark:border-white/5;
+  }
+  
+  .pill-badge {
+    @apply px-3 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all;
+  }
+  
+  .skeleton-loader {
+    @apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded;
+  }
 }
 
-.glass-card {
-  @apply backdrop-blur-lg bg-white/5 border border-white/10 rounded-2xl shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)]
-  transition-all duration-300 hover:shadow-[0_8px_20px_-2px_rgba(0,0,0,0.4)] hover:bg-white/10;
-}
-
-.neo-glass {
-  @apply backdrop-blur-md bg-black/40 border border-white/10 rounded-2xl;
-}
-
-/* Text gradients */
-.text-gradient {
-  @apply bg-gradient-to-br from-white via-white/90 to-white/70 bg-clip-text text-transparent;
-}
-
-.text-gradient-primary {
-  @apply bg-gradient-to-br from-primary via-primary/80 to-accent/60 bg-clip-text text-transparent;
-}
-
-/* Gradient buttons */
-.btn-gradient {
-  @apply relative overflow-hidden shadow-lg;
-  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
-}
-
-.btn-gradient::before {
-  @apply absolute inset-0 opacity-0 transition-opacity duration-300;
-  content: '';
-  background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--accent)));
-}
-
-.btn-gradient:hover::before {
-  @apply opacity-100;
-}
-
-/* Aurora effects */
-.aurora-bg {
-  @apply relative;
-}
-
-.aurora-bg::before {
-  @apply absolute inset-0 -z-10 opacity-40 blur-3xl animate-pulse-slow;
-  content: '';
-  background: linear-gradient(45deg, 
-    rgba(121, 68, 154, 0.4), 
-    rgba(77, 87, 222, 0.4), 
-    rgba(41, 196, 255, 0.4));
-  background-size: 200% 200%;
-  animation: aurora 15s ease infinite;
-}
-
-@keyframes aurora {
-  0% { background-position: 0% 50% }
-  50% { background-position: 100% 50% }
-  100% { background-position: 0% 50% }
-}
-
-@keyframes pulse-slow {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.5; }
-}
-
-/* Handwriting text */
-.handwriting-text {
-  font-family: 'Patrick Hand', cursive;
-}
-
-/* Animated cards */
-.animated-card {
-  @apply transition-all duration-300;
-  transform-style: preserve-3d;
-  perspective: 1000px;
-}
-
-.animated-card:hover {
-  @apply -translate-y-2;
-  transform: rotateX(2deg) rotateY(2deg);
-}
-
-/* Custom scrollbar */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: hsl(var(--muted)) transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply rounded-full;
-  background-color: hsl(var(--muted));
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(var(--primary));
-}
-
-/* Animations */
-.animate-enter {
-  @apply animate-in fade-in slide-in-from-bottom-8 duration-500;
-}
-
-.animate-exit {
-  @apply animate-out fade-out slide-out-to-bottom-8 duration-300;
-}
-
-.animate-pulse-slow {
-  animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
 }
 
-.animate-float {
-  animation: float 5s ease-in-out infinite;
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
 }
 
-/* Hiding the Vapi Container */
-.vapi-container {
-  display: none !important;
+@layer utilities {
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-pulse-soft {
+    animation: pulse-soft 3s ease-in-out infinite;
+  }
+  
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-/* Utility classes */
-.section-padding {
-  @apply py-16 px-4 md:py-24 md:px-8 lg:px-12;
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }

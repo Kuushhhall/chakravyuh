@@ -19,10 +19,6 @@ export default {
 			}
 		},
 		extend: {
-			fontFamily: {
-				sans: ['Inter', 'ui-sans-serif', 'system-ui'],
-				handwriting: ['"Patrick Hand"', 'cursive']
-			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -73,12 +69,6 @@ export default {
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
 			},
-			boxShadow: {
-				'neo': '16px 16px 30px rgba(0, 0, 0, 0.25), -8px -8px 20px rgba(255, 255, 255, 0.03)',
-				'neo-sm': '8px 8px 16px rgba(0, 0, 0, 0.25), -4px -4px 12px rgba(255, 255, 255, 0.03)',
-				'glow': '0 0 20px rgba(139, 92, 246, 0.5)',
-				'glow-sm': '0 0 10px rgba(139, 92, 246, 0.3)',
-			},
 			keyframes: {
 				'accordion-down': {
 					from: { height: '0', opacity: '0' },
@@ -119,11 +109,6 @@ export default {
 				'pulse-soft': {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.85' }
-				},
-				'aurora': {
-					'0%': { backgroundPosition: '0% 50%' },
-					'50%': { backgroundPosition: '100% 50%' },
-					'100%': { backgroundPosition: '0% 50%' }
 				}
 			},
 			animation: {
@@ -138,11 +123,7 @@ export default {
 				'enter': 'fade-in 0.3s ease-out, scale-in 0.2s ease-out',
 				'exit': 'fade-out 0.3s ease-out, scale-out 0.2s ease-out',
 				'float': 'float 3s ease-in-out infinite',
-				'pulse-soft': 'pulse-soft 2s ease-in-out infinite',
-				'aurora': 'aurora 15s ease infinite'
-			},
-			backgroundSize: {
-				'200%': '200% 200%',
+				'pulse-soft': 'pulse-soft 2s ease-in-out infinite'
 			}
 		}
 	},

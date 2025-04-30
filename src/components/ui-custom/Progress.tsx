@@ -9,7 +9,6 @@ interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   showValue?: boolean;
   size?: "sm" | "default" | "lg";
   animate?: boolean;
-  indicatorClassName?: string; // Added this prop to support the SubjectDashboard component
 }
 
 const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
@@ -21,7 +20,6 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
     showValue = false, 
     size = "default", 
     animate = true,
-    indicatorClassName,
     ...props 
   }, ref) => {
     const percentage = (value / max) * 100;
@@ -56,8 +54,7 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
               variantStyles[variant],
               "transition-all duration-300",
               animate && "animate-pulse-soft",
-              sizeStyles[size],
-              indicatorClassName // Use the indicatorClassName prop
+              sizeStyles[size]
             )}
             style={{ width: `${percentage}%` }}
           />

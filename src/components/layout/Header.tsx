@@ -1,321 +1,240 @@
 
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui-custom/Button";
-import { useState, useEffect } from "react";
-import { Menu, X, ChevronDown, Sparkles, User } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { useTheme } from "@/contexts/ThemeContext";
 import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
-import { cn } from "@/lib/utils";
+  AlignRight,
+  BookOpen,
+  Calendar,
+  ChevronDown,
+  Home,
+  Lightbulb,
+  LogOut,
+  Menu,
+  User,
+  X,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { AvatarContainer, AvatarImage, AvatarFallback } from "@/components/ui-custom/Avatar";
 
 export function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { theme } = useTheme();
-  const location = useLocation();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
-  // Close mobile menu when navigating
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
-
-  const isActive = (path: string) => location.pathname === path;
-
-  const resourcesMenu = [
-    { title: "Blog", path: "/blog", description: "Insights and guides for JEE preparation" },
-    { title: "Help Center", path: "/help", description: "Answers to common questions" },
-    { title: "Testimonials", path: "/testimonials", description: "Student success stories" },
+  const menuItems = [
+    { label: "Home", icon: <Home className="h-4 w-4 mr-2" />, path: "/dashboard" },
+    { label: "Study", icon: <BookOpen className="h-4 w-4 mr-2" />, path: "/ai-tutor" },
+    { label: "Schedule", icon: <Calendar className="h-4 w-4 mr-2" />, path: "/study-schedule" },
+    { label: "Resources", icon: <Lightbulb className="h-4 w-4 mr-2" />, path: "/resources" },
   ];
 
-  const companyMenu = [
-    { title: "About Us", path: "/about", description: "Our vision and mission" },
-    { title: "Careers", path: "/careers", description: "Join our team" },
-    { title: "Contact", path: "/contact", description: "Get in touch with us" },
-  ];
+  // Function to get avatar URL if available from user metadata or provider data
+  const getAvatarUrl = () => {
+    if (!user) return null;
+    
+    // Try to get avatar from user metadata
+    const avatarUrl = user.user_metadata?.avatar_url;
+    if (avatarUrl) return avatarUrl;
+    
+    // If not found in metadata, check each provider's data
+    if (user.identities && user.identities.length > 0) {
+      for (const identity of user.identities) {
+        if (identity.provider === 'google' && identity.identity_data?.avatar_url) {
+          return identity.identity_data.avatar_url;
+        }
+      }
+    }
+    
+    return null;
+  };
+
+  // Get the display name of the user
+  const getDisplayName = () => {
+    if (!user) return '';
+    
+    return user.user_metadata?.name || 
+           user.user_metadata?.full_name || 
+           (user.identities && user.identities.length > 0 && user.identities[0].identity_data?.full_name) || 
+           user.email?.split('@')[0] || 
+           '';
+  };
 
   return (
-    <header 
-      className={cn(
-        "sticky top-0 z-50 w-full transition-all duration-300",
-        isScrolled 
-          ? "border-b bg-background/95 backdrop-blur-lg shadow-sm" 
-          : "bg-background/80 backdrop-blur-sm"
-      )}
-    >
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <span className="text-gradient">Chakravyuh</span>
+          <Link
+            to={user ? "/dashboard" : "/"}
+            className="flex items-center space-x-2"
+          >
+            <BookOpen className="h-6 w-6 text-primary" />
+            <span className="font-bold text-xl inline-block">StudyAI</span>
           </Link>
         </div>
-        
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex md:items-center md:gap-1">
-          <NavigationMenu>
-            <NavigationMenuList>
-              <NavigationMenuItem>
-                <Link to="/dashboard">
-                  <NavigationMenuLink 
-                    className={cn(
-                      navigationMenuTriggerStyle(), 
-                      isActive("/dashboard") && "bg-accent/50"
-                    )}
-                  >
-                    Dashboard
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-              
-              <NavigationMenuItem>
-                <Link to="/ai-tutor">
-                  <NavigationMenuLink 
-                    className={cn(
-                      navigationMenuTriggerStyle(), 
-                      isActive("/ai-tutor") && "bg-accent/50"
-                    )}
-                  >
-                    AI Tutor
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-              
-              <NavigationMenuItem>
-                <Link to="/explore">
-                  <NavigationMenuLink 
-                    className={cn(
-                      navigationMenuTriggerStyle(), 
-                      isActive("/explore") && "bg-accent/50"
-                    )}
-                  >
-                    Explore
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-              
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className={cn(
-                  location.pathname.startsWith("/resources") ||
-                  location.pathname.startsWith("/blog") ||
-                  location.pathname.startsWith("/help") ||
-                  location.pathname.startsWith("/testimonials") 
-                    ? "bg-accent/50" : "")}>
-                  Resources
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                    {resourcesMenu.map((item) => (
-                      <li key={item.path}>
-                        <NavigationMenuLink asChild>
-                          <Link
-                            to={item.path}
-                            className={cn(
-                              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-                              isActive(item.path) && "bg-accent/50"
-                            )}
-                          >
-                            <div className="text-sm font-medium leading-none">{item.title}</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              {item.description}
-                            </p>
-                          </Link>
-                        </NavigationMenuLink>
-                      </li>
-                    ))}
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-              
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className={cn(
-                  location.pathname.startsWith("/about") || 
-                  location.pathname.startsWith("/careers") ||
-                  location.pathname.startsWith("/contact") 
-                    ? "bg-accent/50" : "")}>
-                  Company
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                    {companyMenu.map((item) => (
-                      <li key={item.path}>
-                        <NavigationMenuLink asChild>
-                          <Link
-                            to={item.path}
-                            className={cn(
-                              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-                              isActive(item.path) && "bg-accent/50"
-                            )}
-                          >
-                            <div className="text-sm font-medium leading-none">{item.title}</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              {item.description}
-                            </p>
-                          </Link>
-                        </NavigationMenuLink>
-                      </li>
-                    ))}
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
-        </nav>
-        
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          
-          {user ? (
-            <div className="relative group">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-2 rounded-full border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all duration-300" 
+
+        {/* Desktop Navigation */}
+        {!isMobile && (
+          <nav className="mx-6 flex items-center space-x-4 lg:space-x-6 hidden md:flex">
+            {user && menuItems.map((item) => (
+              <Button
+                key={item.path}
+                variant="ghost"
                 asChild
               >
-                <Link to="/profile" className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
-                    <User className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <span className="text-sm">Profile</span>
+                <Link 
+                  to={item.path}
+                  className="flex items-center justify-center"
+                >
+                  {item.icon}
+                  {item.label}
                 </Link>
               </Button>
-            </div>
+            ))}
+          </nav>
+        )}
+
+        <div className="flex items-center gap-2">
+          {user ? (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className="relative overflow-hidden rounded-full"
+              >
+                <Link to="/profile">
+                  <AvatarContainer size="md">
+                    <AvatarImage src={getAvatarUrl() || undefined} alt={getDisplayName()} />
+                    <AvatarFallback>{getDisplayName().charAt(0).toUpperCase()}</AvatarFallback>
+                  </AvatarContainer>
+                </Link>
+              </Button>
+              <div className="hidden md:flex">
+                <Button
+                  variant="ghost"
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
+                </Button>
+              </div>
+            </>
           ) : (
-            <Button 
-              variant="default" 
-              size="sm" 
-              className="relative overflow-hidden group"
-              asChild
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size={isMobile ? "sm" : "default"}
+                asChild
+              >
+                <Link to="/sign-in">Sign In</Link>
+              </Button>
+              <Button
+                size={isMobile ? "sm" : "default"}
+                asChild
+              >
+                <Link to="/sign-up">Sign Up</Link>
+              </Button>
+            </div>
+          )}
+
+          {/* Mobile Menu Button */}
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleMenu}
+              aria-label="Toggle Menu"
             >
-              <Link to="/signin" className="flex items-center gap-2">
-                <span className="relative z-10">Sign In</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"></div>
-              </Link>
+              {isOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </Button>
           )}
-          
-          {/* Mobile menu button */}
-          <button
-            className="block md:hidden focus:outline-none"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          >
-            {isMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </button>
         </div>
       </div>
-      
-      {/* Mobile menu */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 top-16 z-50 grid h-[calc(100vh-4rem)] grid-flow-row auto-rows-max overflow-auto bg-background/95 backdrop-blur-md p-6 pb-32 animate-in slide-in-from-top-5 md:hidden">
-          <div className="flex flex-col space-y-4">
-            <Link 
-              to="/dashboard"
-              className={cn(
-                "text-lg font-medium transition-colors hover:text-primary py-2 border-b border-border/50",
-                isActive("/dashboard") && "text-primary"
-              )}
-            >
-              Dashboard
-            </Link>
-            <Link 
-              to="/ai-tutor"
-              className={cn(
-                "text-lg font-medium transition-colors hover:text-primary py-2 border-b border-border/50",
-                isActive("/ai-tutor") && "text-primary"
-              )}
-            >
-              AI Tutor
-            </Link>
-            <Link 
-              to="/explore"
-              className={cn(
-                "text-lg font-medium transition-colors hover:text-primary py-2 border-b border-border/50",
-                isActive("/explore") && "text-primary"
-              )}
-            >
-              Explore
-            </Link>
-            <div className="py-2 border-b border-border/50">
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-medium">Resources</span>
-                <ChevronDown className="h-4 w-4" />
-              </div>
-              <div className="ml-4 mt-2 flex flex-col space-y-2">
-                {resourcesMenu.map(item => (
-                  <Link 
+
+      {/* Mobile Menu */}
+      {isMobile && isOpen && (
+        <div className="container pb-4">
+          <nav className="flex flex-col space-y-2">
+            {user ? (
+              <>
+                {menuItems.map((item) => (
+                  <Button
                     key={item.path}
-                    to={item.path}
-                    className={cn(
-                      "text-base transition-colors hover:text-primary",
-                      isActive(item.path) && "text-primary"
-                    )}
+                    variant="ghost"
+                    onClick={() => {
+                      navigate(item.path);
+                      setIsOpen(false);
+                    }}
+                    className="justify-start"
                   >
-                    {item.title}
-                  </Link>
-                ))}
-              </div>
-            </div>
-            <div className="py-2 border-b border-border/50">
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-medium">Company</span>
-                <ChevronDown className="h-4 w-4" />
-              </div>
-              <div className="ml-4 mt-2 flex flex-col space-y-2">
-                {companyMenu.map(item => (
-                  <Link 
-                    key={item.path}
-                    to={item.path}
-                    className={cn(
-                      "text-base transition-colors hover:text-primary",
-                      isActive(item.path) && "text-primary"
-                    )}
-                  >
-                    {item.title}
-                  </Link>
-                ))}
-              </div>
-            </div>
-            <div className="pt-6">
-              {user ? (
-                <div className="space-y-3">
-                  <Button className="w-full" asChild>
-                    <Link to="/profile">Profile</Link>
+                    {item.icon}
+                    {item.label}
                   </Button>
-                  <Button variant="outline" className="w-full" onClick={signOut}>
-                    Sign Out
-                  </Button>
-                </div>
-              ) : (
-                <Button className="w-full" asChild>
-                  <Link to="/signin">Sign In</Link>
+                ))}
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    navigate("/profile");
+                    setIsOpen(false);
+                  }}
+                  className="justify-start"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Profile
                 </Button>
-              )}
-            </div>
-          </div>
+                <Button
+                  variant="ghost"
+                  onClick={handleSignOut}
+                  className="justify-start text-destructive"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    navigate("/");
+                    setIsOpen(false);
+                  }}
+                  className="justify-start"
+                >
+                  <Home className="h-4 w-4 mr-2" />
+                  Home
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    navigate("/explore");
+                    setIsOpen(false);
+                  }}
+                  className="justify-start"
+                >
+                  <AlignRight className="h-4 w-4 mr-2" />
+                  Explore
+                </Button>
+              </>
+            )}
+          </nav>
         </div>
       )}
     </header>

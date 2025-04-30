@@ -155,10 +155,10 @@ export function SubjectDashboard() {
   };
   
   return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div className="container py-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h2 className="text-2xl font-bold mb-1">Your Study Dashboard</h2>
+          <h1 className="text-3xl font-bold mb-2">Your Study Dashboard</h1>
           <p className="text-muted-foreground">Track your progress and plan your study sessions</p>
         </div>
         <div className="flex items-center gap-2">
@@ -174,43 +174,43 @@ export function SubjectDashboard() {
       </div>
       
       {/* Stats Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard 
           title="Study Streak" 
           value={studyStats.streakDays} 
           suffix=" days"
-          icon={Target} 
+          icon={BadgeCheck} 
           description="Keep going!" 
         />
         <StatCard 
-          title="Questions" 
+          title="Questions Completed" 
           value={studyStats.questionsCompleted} 
-          icon={Book} 
+          icon={Target} 
           description="10 today" 
         />
         <StatCard 
-          title="Hours" 
+          title="Hours Studied" 
           value={studyStats.hoursSpent} 
           icon={Clock} 
-          description="2 today" 
+          description="2 hours today" 
         />
         <StatCard 
-          title="Mastery" 
+          title="Mastery Level" 
           value={studyStats.mastery} 
           suffix="%"
           icon={LineChart} 
-          description="Progress" 
+          description="Increasing steadily" 
         />
       </div>
       
       {/* Priority Section */}
-      <div className="mb-6">
+      <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">Study Priorities</h2>
+          <h2 className="text-xl font-bold">Study Priorities</h2>
           <Button variant="link" size="sm">View All</Button>
         </div>
         <Card>
-          <CardContent className="p-0">
+          <CardContent className="p-4">
             {recommendedSubjects.map((item, index) => (
               <PriorityItem 
                 key={index} 
@@ -225,9 +225,9 @@ export function SubjectDashboard() {
       </div>
       
       {/* Overall Progress */}
-      <div className="mb-6">
+      <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">Overall Progress</h2>
+          <h2 className="text-xl font-bold">Overall Progress</h2>
           <div className="flex gap-2">
             <Button 
               variant={view === "grid" ? "default" : "outline"} 
@@ -249,8 +249,8 @@ export function SubjectDashboard() {
         </div>
         
         {view === "grid" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {subjectsData.slice(0, 4).map((subject) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {subjectsData.map((subject) => (
               <StudyPlanItem 
                 key={subject.id}
                 subject={subject.subject}
@@ -265,7 +265,7 @@ export function SubjectDashboard() {
         ) : (
           <Card>
             <CardContent className="p-4">
-              {subjectsData.slice(0, 4).map((subject, index) => (
+              {subjectsData.map((subject, index) => (
                 <div key={subject.id} className="py-4 border-b last:border-b-0">
                   <div className="flex justify-between items-center mb-2">
                     <div>
@@ -306,6 +306,49 @@ export function SubjectDashboard() {
             </CardContent>
           </Card>
         )}
+      </div>
+      
+      {/* Recommended Resources */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold">Recommended Resources</h2>
+          <Button variant="link" size="sm">View All</Button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="p-3 rounded-full bg-blue-100 text-blue-800">
+                <Book className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-medium">JEE Physics Formula Sheet</h3>
+                <p className="text-sm text-muted-foreground">All important formulas in one place</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="p-3 rounded-full bg-green-100 text-green-800">
+                <Book className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-medium">Chemistry Reaction Guide</h3>
+                <p className="text-sm text-muted-foreground">Master organic reactions</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="p-3 rounded-full bg-purple-100 text-purple-800">
+                <Book className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-medium">Calculus Problem Solving</h3>
+                <p className="text-sm text-muted-foreground">Advanced techniques with examples</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

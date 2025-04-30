@@ -1,42 +1,21 @@
 
-import { supabase, isSupabaseConfigured } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js'
 
-// Re-export the supabase client and configuration flag
-export { supabase, isSupabaseConfigured };
+// These environment variables are automatically injected by Lovable when you connect Supabase
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Create a storage bucket for avatars if it doesn't exist
-async function createAvatarsBucketIfNotExists() {
-  if (!isSupabaseConfigured) return;
-
-  try {
-    // Try to get the avatars bucket
-    const { data: buckets } = await supabase
-      .storage
-      .listBuckets();
-
-    // Check if the avatars bucket exists
-    const avatarsBucketExists = buckets?.some(bucket => bucket.name === 'avatars');
-
-    // If it doesn't exist, create it
-    if (!avatarsBucketExists) {
-      const { error } = await supabase
-        .storage
-        .createBucket('avatars', {
-          public: true,
-          fileSizeLimit: 2097152, // 2MB
-          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml']
-        });
-
-      if (error) {
-        console.error('Error creating avatars bucket:', error);
-      } else {
-        console.log('Created avatars bucket successfully');
-      }
+// Create a temporary client with demo mode if credentials are missing
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder-url.supabase.co', 
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
     }
-  } catch (error) {
-    console.error('Error checking/creating avatars bucket:', error);
   }
-}
+);
 
-// Initialize the avatars bucket
-createAvatarsBucketIfNotExists();
+// Add a flag to check if Supabase is properly configured
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);

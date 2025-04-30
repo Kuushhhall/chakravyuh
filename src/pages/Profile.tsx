@@ -1,5 +1,5 @@
 
-import { useState, useRef, ChangeEvent } from "react";
+import { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Card, CardContent } from "@/components/ui-custom/Card";
@@ -7,71 +7,56 @@ import { Button } from "@/components/ui-custom/Button";
 import { Progress } from "@/components/ui-custom/Progress";
 import { AvatarContainer, AvatarImage, AvatarFallback } from "@/components/ui-custom/Avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Award, BookOpen, Clock, Edit, FileEdit, LineChart, LogOut, Mail, Phone, Settings, User, Beaker, GraduationCap, Sigma, Upload } from "lucide-react";
+import { Award, BookOpen, Clock, Edit, FileEdit, LineChart, LogOut, Mail, Phone, Settings, User, Beaker, GraduationCap, Sigma } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Modal } from "@/components/ui-custom/Modal";
 import { StudentAvatarSelector, AvatarOption } from "@/components/StudentAvatarSelector";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+
+interface UserData {
+  name: string;
+  email: string;
+  phone: string;
+  targetExam: string;
+  targetYear: string;
+  profileImage: string;
+  avatarId?: string;
+}
+
+interface StatsData {
+  totalStudyHours: number;
+  questionsAnswered: number;
+  averageScore: number;
+  streak: number;
+}
+
+interface ActivityItem {
+  type: "study" | "test";
+  subject: string;
+  topic: string;
+  time: string;
+  duration?: string;
+  score?: string;
+}
 
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { user, updateUserProfile } = useAuth();
   
-  // User data
-  const [userData, setUserData] = useState({
-    name: "",
-    email: "",
-    phone: "",
+  // Mock user data
+  const [userData, setUserData] = useState<UserData>({
+    name: "Rahul Sharma",
+    email: "rahul.sharma@example.com",
+    phone: "+91 98765 43210",
     targetExam: "JEE Advanced",
     targetYear: "2024",
-    profileImage: "",
-    avatarId: ""
-  });
-
-  // Fetch user profile from database
-  const fetchUserProfile = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        setUserData({
-          name: data.display_name || user.user_metadata?.name || "",
-          email: data.email || user.email || "",
-          phone: user.phone || "",
-          targetExam: data.preferred_exam_type || "JEE Advanced",
-          targetYear: "2024",
-          profileImage: data.profile_picture || "",
-          avatarId: data.profile_picture?.includes('dicebear') ? data.profile_picture : ""
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-    }
-  };
-
-  // Fetch user data when component mounts or user changes
-  useState(() => {
-    if (user) {
-      fetchUserProfile();
-    }
+    profileImage: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=200&h=200",
+    avatarId: "photo-1"
   });
   
   // Mock stats data
-  const stats = {
+  const stats: StatsData = {
     totalStudyHours: 120,
     questionsAnswered: 1450,
     averageScore: 72,
@@ -79,34 +64,20 @@ const Profile = () => {
   };
   
   // Mock recent activities
-  const recentActivities = [
+  const recentActivities: ActivityItem[] = [
     { type: "study", subject: "Physics", topic: "Mechanics", time: "2 hours ago", duration: "45 minutes" },
     { type: "test", subject: "Chemistry", topic: "Organic Chemistry Test", time: "Yesterday", score: "85%" },
     { type: "study", subject: "Mathematics", topic: "Calculus", time: "Yesterday", duration: "60 minutes" },
     { type: "test", subject: "Physics", topic: "Weekly Assessment", time: "2 days ago", score: "78%" }
   ];
   
-  const handleSaveProfile = async () => {
-    try {
-      if (!user) return;
-      
-      // Update profile in database
-      await updateUserProfile(userData.profileImage, userData.name);
-      
-      setIsEditing(false);
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully.",
-        duration: 3000,
-      });
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        duration: 3000,
-      });
-    }
+  const handleSaveProfile = () => {
+    setIsEditing(false);
+    toast({
+      title: "Profile Updated",
+      description: "Your profile has been updated successfully.",
+      duration: 3000,
+    });
   };
   
   const handleLogout = () => {
@@ -118,135 +89,51 @@ const Profile = () => {
     navigate("/");
   };
 
-  const handleAvatarChange = async (avatarId: string) => {
-    try {
-      // Find the avatar source based on the selected avatar ID
-      const avatarOptions: AvatarOption[] = [
-        // Flat icon avatars
-        { id: "flat-1", type: "flat", name: "Default" },
-        // 3D rendered avatars
-        { id: "3d-1", type: "3d", imageUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=student1&backgroundColor=b6e3f4", name: "3D Shape 1" },
-        { id: "3d-2", type: "3d", imageUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=student2&backgroundColor=d1d4f9", name: "3D Shape 2" },
-        { id: "3d-3", type: "3d", imageUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=student3&backgroundColor=c0aede", name: "3D Shape 3" },
-        { id: "3d-4", type: "3d", imageUrl: "https://api.dicebear.com/7.x/thumbs/svg?seed=student1", name: "3D Thumbs 1" },
-        { id: "3d-5", type: "3d", imageUrl: "https://api.dicebear.com/7.x/thumbs/svg?seed=student2", name: "3D Thumbs 2" },
-        { id: "3d-6", type: "3d", imageUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=student1", name: "3D Avatar 1" },
-        { id: "3d-7", type: "3d", imageUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=student2", name: "3D Avatar 2" },
-        // Photo avatars
-        { id: "photo-1", type: "photo", imageUrl: "https://images.unsplash.com/photo-1535268647677-300dbf3d78d1?auto=format&fit=crop&w=200&h=200", name: "Photo 1" },
-        { id: "photo-2", type: "photo", imageUrl: "https://images.unsplash.com/photo-1501286353178-1ec881214838?auto=format&fit=crop&w=200&h=200", name: "Photo 2" },
-        { id: "photo-3", type: "photo", imageUrl: "https://images.unsplash.com/photo-1441057206919-63d19fac2369?auto=format&fit=crop&w=200&h=200", name: "Photo 3" },
-      ];
-      
-      const avatar = avatarOptions.find(a => a.id === avatarId);
-      if (!avatar) return;
-      
-      const newAvatarUrl = avatar.imageUrl || "";
-      
-      // Update in state
-      setUserData({
-        ...userData,
-        avatarId: avatarId,
-        profileImage: newAvatarUrl
-      });
-      
-      // Update in database
-      await updateUserProfile(newAvatarUrl);
+  const handleAvatarChange = (avatarId: string) => {
+    // In a real app, you'd save this to the backend
+    setUserData({
+      ...userData,
+      avatarId: avatarId
+    });
     
-      // Close modal after short delay to show selection animation
-      setTimeout(() => {
-        setShowAvatarModal(false);
-        toast({
-          title: "Avatar Updated",
-          description: "Your profile avatar has been updated successfully.",
-          duration: 3000,
-        });
-      }, 500);
-    } catch (error) {
-      console.error("Error updating avatar:", error);
+    // Close modal after short delay to show selection animation
+    setTimeout(() => {
+      setShowAvatarModal(false);
       toast({
-        title: "Error",
-        description: "Failed to update avatar. Please try again.",
+        title: "Avatar Updated",
+        description: "Your profile avatar has been updated successfully.",
         duration: 3000,
       });
-    }
-  };
-
-  // Handle file upload from device
-  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    
-    try {
-      setIsUploading(true);
-      
-      // Upload file to Supabase Storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-      
-      const { error: uploadError, data: uploadData } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file);
-        
-      if (uploadError) throw uploadError;
-      
-      // Get public URL
-      const { data } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-        
-      if (!data || !data.publicUrl) throw new Error('Failed to get public URL');
-      
-      // Update profile with new avatar URL
-      await updateUserProfile(data.publicUrl);
-      
-      // Update local state
-      setUserData({
-        ...userData,
-        profileImage: data.publicUrl,
-        avatarId: ""
-      });
-      
-      toast({
-        title: "Profile Picture Updated",
-        description: "Your profile picture has been updated successfully.",
-        duration: 3000,
-      });
-    } catch (error: any) {
-      console.error("Error uploading file:", error);
-      toast({
-        title: "Error",
-        description: error?.message || "Failed to upload profile picture. Please try again.",
-        duration: 3000,
-      });
-    } finally {
-      setIsUploading(false);
-    }
+    }, 500);
   };
   
-  // Function to handle the upload button click
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-  
-  // Get the avatar source
+  // Find the avatar source based on the selected avatar ID
   const getAvatarSource = () => {
-    if (userData.profileImage) return userData.profileImage;
+    // If using default image from userData
+    if (!userData.avatarId) return userData.profileImage;
     
-    if (user) {
-      // Try to get from user metadata
-      if (user.user_metadata?.avatar_url) return user.user_metadata.avatar_url;
-      
-      // Try from identities
-      if (user.identities) {
-        for (const identity of user.identities) {
-          if (identity.identity_data?.avatar_url) return identity.identity_data.avatar_url;
-        }
-      }
-    }
+    // Find avatar from our options (code in StudentAvatarSelector)
+    const selectedAvatarId = userData.avatarId;
+    // This would normally be imported from the StudentAvatarSelector
+    const avatarOptions: AvatarOption[] = [
+      // Flat icon avatars (these won't have image URLs, they use icons)
+      { id: "flat-1", type: "flat", name: "Default" },
+      // 3D rendered avatars
+      { id: "3d-1", type: "3d", imageUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=student1&backgroundColor=b6e3f4", name: "3D Shape 1" },
+      { id: "3d-2", type: "3d", imageUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=student2&backgroundColor=d1d4f9", name: "3D Shape 2" },
+      { id: "3d-3", type: "3d", imageUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=student3&backgroundColor=c0aede", name: "3D Shape 3" },
+      { id: "3d-4", type: "3d", imageUrl: "https://api.dicebear.com/7.x/thumbs/svg?seed=student1", name: "3D Thumbs 1" },
+      { id: "3d-5", type: "3d", imageUrl: "https://api.dicebear.com/7.x/thumbs/svg?seed=student2", name: "3D Thumbs 2" },
+      { id: "3d-6", type: "3d", imageUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=student1", name: "3D Avatar 1" },
+      { id: "3d-7", type: "3d", imageUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=student2", name: "3D Avatar 2" },
+      // Photo avatars
+      { id: "photo-1", type: "photo", imageUrl: "https://images.unsplash.com/photo-1535268647677-300dbf3d78d1?auto=format&fit=crop&w=200&h=200", name: "Photo 1" },
+      { id: "photo-2", type: "photo", imageUrl: "https://images.unsplash.com/photo-1501286353178-1ec881214838?auto=format&fit=crop&w=200&h=200", name: "Photo 2" },
+      { id: "photo-3", type: "photo", imageUrl: "https://images.unsplash.com/photo-1441057206919-63d19fac2369?auto=format&fit=crop&w=200&h=200", name: "Photo 3" },
+    ];
     
-    return "";
+    const avatar = avatarOptions.find(a => a.id === selectedAvatarId);
+    return avatar?.imageUrl || userData.profileImage;
   };
   
   return (
@@ -289,40 +176,16 @@ const Profile = () => {
                         <AvatarImage src={getAvatarSource()} alt={userData.name} />
                         <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
                       </AvatarContainer>
-                      <div className="absolute -bottom-2 -right-2 flex space-x-1">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="rounded-full h-8 w-8 p-0"
-                          onClick={() => setShowAvatarModal(true)}
-                          title="Choose Avatar"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="rounded-full h-8 w-8 p-0"
-                          onClick={handleUploadClick}
-                          disabled={isUploading}
-                          title="Upload from device"
-                        >
-                          {isUploading ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                          ) : (
-                            <Upload className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <input 
-                          type="file" 
-                          ref={fileInputRef} 
-                          onChange={handleFileUpload} 
-                          className="hidden" 
-                          accept="image/*"
-                        />
-                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0"
+                        onClick={() => setShowAvatarModal(true)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <h2 className="text-xl font-bold mb-1">{userData.name || (user?.user_metadata?.name || user?.email?.split('@')[0] || "Student")}</h2>
+                    <h2 className="text-xl font-bold mb-1">{userData.name}</h2>
                     <p className="text-muted-foreground">Preparing for {userData.targetExam}</p>
                   </div>
                   
@@ -339,7 +202,7 @@ const Profile = () => {
                             className="w-full p-2 mt-1 border rounded-md"
                           />
                         ) : (
-                          <p>{userData.email || user?.email || "Not set"}</p>
+                          <p>{userData.email}</p>
                         )}
                       </div>
                     </div>
@@ -356,7 +219,7 @@ const Profile = () => {
                             className="w-full p-2 mt-1 border rounded-md"
                           />
                         ) : (
-                          <p>{userData.phone || "Not set"}</p>
+                          <p>{userData.phone}</p>
                         )}
                       </div>
                     </div>

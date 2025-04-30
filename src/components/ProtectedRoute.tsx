@@ -3,7 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
-// This component is kept but not used anymore
+// This component still exists but is no longer used in the app
+// It's kept for reference in case you want to enable protected routes in the future
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
 
@@ -16,9 +17,10 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/signin" replace />;
-  }
+  // This line is commented out to allow all users access regardless of auth status
+  // if (!user) {
+  //   return <Navigate to="/signin" replace />;
+  // }
 
   return <>{children}</>;
 };

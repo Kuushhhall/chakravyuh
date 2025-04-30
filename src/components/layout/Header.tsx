@@ -1,7 +1,6 @@
-
 import { Button } from "@/components/ui-custom/Button";
 import { useState, useEffect } from "react";
-import { Menu, X, ChevronDown, Sparkles, User } from "lucide-react";
+import { Menu, X, ChevronDown, Sparkles, Sun, Moon, User, BookOpen } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -33,12 +32,12 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const isActive = (path: string) => location.pathname === path;
+
   // Close mobile menu when navigating
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location.pathname]);
-
-  const isActive = (path: string) => location.pathname === path;
 
   const resourcesMenu = [
     { title: "Blog", path: "/blog", description: "Insights and guides for JEE preparation" },
@@ -50,6 +49,13 @@ export function Header() {
     { title: "About Us", path: "/about", description: "Our vision and mission" },
     { title: "Careers", path: "/careers", description: "Join our team" },
     { title: "Contact", path: "/contact", description: "Get in touch with us" },
+  ];
+
+  // New AI Tutor menu
+  const aiTutorMenu = [
+    { title: "Study with AI", path: "/ai-tutor", description: "Learn with our AI tutors" },
+    { title: "Knowledge Map", path: "/concept-map", description: "View your knowledge graph" },
+    { title: "Assessment", path: "/assessment", description: "Take prerequisite assessments" },
   ];
 
   return (
@@ -86,17 +92,40 @@ export function Header() {
                 </Link>
               </NavigationMenuItem>
               
+              {/* AI Tutor Nav Item */}
               <NavigationMenuItem>
-                <Link to="/ai-tutor">
-                  <NavigationMenuLink 
-                    className={cn(
-                      navigationMenuTriggerStyle(), 
-                      isActive("/ai-tutor") && "bg-accent/50"
-                    )}
-                  >
+                <NavigationMenuTrigger className={cn(
+                  location.pathname.startsWith("/ai-tutor") || 
+                  location.pathname.startsWith("/concept-map") ||
+                  location.pathname.startsWith("/assessment") 
+                    ? "bg-accent/50" : "")}>
+                  <span className="flex items-center gap-1">
+                    <BookOpen className="h-4 w-4" />
                     AI Tutor
-                  </NavigationMenuLink>
-                </Link>
+                  </span>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                    {aiTutorMenu.map((item) => (
+                      <li key={item.path}>
+                        <NavigationMenuLink asChild>
+                          <Link
+                            to={item.path}
+                            className={cn(
+                              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+                              isActive(item.path) && "bg-accent/50"
+                            )}
+                          >
+                            <div className="text-sm font-medium leading-none">{item.title}</div>
+                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                              {item.description}
+                            </p>
+                          </Link>
+                        </NavigationMenuLink>
+                      </li>
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
               </NavigationMenuItem>
               
               <NavigationMenuItem>
@@ -241,15 +270,32 @@ export function Header() {
             >
               Dashboard
             </Link>
-            <Link 
-              to="/ai-tutor"
-              className={cn(
-                "text-lg font-medium transition-colors hover:text-primary py-2 border-b border-border/50",
-                isActive("/ai-tutor") && "text-primary"
-              )}
-            >
-              AI Tutor
-            </Link>
+            
+            {/* AI Tutor Mobile Menu */}
+            <div className="py-2 border-b border-border/50">
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-medium flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  AI Tutor
+                </span>
+                <ChevronDown className="h-4 w-4" />
+              </div>
+              <div className="ml-4 mt-2 flex flex-col space-y-2">
+                {aiTutorMenu.map(item => (
+                  <Link 
+                    key={item.path}
+                    to={item.path}
+                    className={cn(
+                      "text-base transition-colors hover:text-primary",
+                      isActive(item.path) && "text-primary"
+                    )}
+                  >
+                    {item.title}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            
             <Link 
               to="/explore"
               className={cn(
@@ -259,6 +305,7 @@ export function Header() {
             >
               Explore
             </Link>
+            
             <div className="py-2 border-b border-border/50">
               <div className="flex items-center justify-between">
                 <span className="text-lg font-medium">Resources</span>

@@ -1,3 +1,4 @@
+
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -55,24 +56,22 @@ const App = () => (
               <Route path="/email-signin" element={<EmailSignIn />} />
               <Route path="/phone-signin" element={<PhoneSignIn />} />
               
-              {/* Content routes - no authentication required */}
+              {/* Content routes - no login required */}
+              <Route path="/about" element={<About />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/exam-select" element={<ExamSelect />} />
+              <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/ai-tutor" element={<AITutorPage />} />
+              <Route path="/subject/:subjectId" element={<SubjectDetail />} />
+              <Route path="/assessment" element={<Assessment />} />
+              <Route path="/concept-map" element={<ConceptMapPage />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/practice-tests" element={<PracticeTests />} />
               <Route path="/test-results/:testId" element={<TestResults />} />
               <Route path="/study-schedule" element={<StudySchedule />} />
-              
-              {/* Other routes */}
-              <Route path="/exam-select" element={<ExamSelect />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/subject/:subjectId" element={<SubjectDetail />} />
-              <Route path="/assessment" element={<Assessment />} />
-              <Route path="/concept-map" element={<ConceptMapPage />} />
               <Route path="/resources" element={<ResourceLibrary />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/explore" element={<Explore />} />
               
               {/* Resource pages */}
               <Route path="/blog" element={<Blog />} />

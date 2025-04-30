@@ -1,122 +1,62 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui-custom/Button";
-import { Input } from "@/components/ui/input";
-import { ArrowLeft, Mic, MicOff, Send, UserCircle2 } from "lucide-react";
+import { Mic, MicOff, Send, User, Volume2, VolumeX, RefreshCw, ChevronDown, X, Download } from "lucide-react";
 import { useConversation } from "@11labs/react";
 import { useToast } from "@/hooks/use-toast";
 
-type Teacher = {
-  id: string;
-  name: string;
-  title: string;
-  avatar: string;
-  description: string;
-  subjects: string[];
-  voiceId: string;
-};
-
-type Role = "user" | "ai";
-
 interface Message {
-  message: string;
-  source: Role;
-}
-
-interface KnowledgeGraphNode {
   id: string;
-  label: string;
-  level: number;
-  mastered: boolean;
-}
-
-interface KnowledgeGraphEdge {
-  source: string;
-  target: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
 }
 
 interface ChatInterfaceProps {
-  teacher: Teacher;
-  knowledgeAreas: string[];
-  initialScore: number;
-  onBack: () => void;
+  teacherName: string;
+  teacherAvatar: string;
+  voiceId: string;
+  agentId: string;
+  knowledgeNodes?: {
+    nodeId: string;
+    mastery: number;
+  }[];
 }
 
-// Helper to generate knowledge graph
-const generateKnowledgeGraph = (areas: string[], initialScore: number): {
-  nodes: KnowledgeGraphNode[];
-  edges: KnowledgeGraphEdge[];
-} => {
-  const nodes: KnowledgeGraphNode[] = [];
-  const edges: KnowledgeGraphEdge[] = [];
-  
-  // Generate nodes based on knowledge areas
-  areas.forEach((area, idx) => {
-    // Main concept node
-    nodes.push({
-      id: area,
-      label: area,
-      level: 1,
-      mastered: initialScore > 3 // Consider mastered if quiz score was good
-    });
-    
-    // Sub-concepts (would be dynamically generated in full implementation)
-    const subConcepts = [
-      `${area} Basic Principles`,
-      `${area} Applications`,
-      `${area} Advanced Topics`
-    ];
-    
-    subConcepts.forEach((subConcept, subIdx) => {
-      const nodeId = `${area}-${subIdx}`;
-      nodes.push({
-        id: nodeId,
-        label: subConcept,
-        level: 2,
-        mastered: initialScore > 3 ? (subIdx === 2 ? false : true) : false
-      });
-      
-      // Edge from main concept to subconcept
-      edges.push({
-        source: area,
-        target: nodeId
-      });
-    });
-  });
-  
-  return { nodes, edges };
-};
-
-export default function ChatInterface({ teacher, knowledgeAreas, initialScore, onBack }: ChatInterfaceProps) {
+export function ChatInterface({
+  teacherName,
+  teacherAvatar,
+  voiceId,
+  agentId,
+  knowledgeNodes,
+}: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState("");
-  const [isChatStarted, setIsChatStarted] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
-  const [showIntro, setShowIntro] = useState(true);
+  const [userInput, setUserInput] = useState("");
+  const [isStarted, setIsStarted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  
-  // Knowledge graph state
-  const [knowledgeGraph, setKnowledgeGraph] = useState(() => 
-    generateKnowledgeGraph(knowledgeAreas, initialScore)
-  );
-  
-  // Voice conversation handling
+
+  // Initialize the conversation with Eleven Labs
   const conversation = useConversation({
     onConnect: () => {
       console.log("Connected to Eleven Labs");
-      // Add initial AI message for welcome
-      setTimeout(() => {
-        const welcomeMessage = `Hello, I'm ${teacher.name}. Based on your assessment, I'll focus on ${knowledgeAreas.join(", ")}. What would you like to learn about today?`;
-        setMessages(prev => [...prev, { message: welcomeMessage, source: "ai" }]);
-        setIsTyping(false);
-      }, 1500);
+      const welcomeMessage = `Hello! I'm ${teacherName}, your AI tutor for JEE preparation. I'll help you understand concepts, solve problems, and prepare for your exams. What would you like to learn today?`;
+      
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: welcomeMessage,
+          timestamp: new Date(),
+        },
+      ]);
     },
     onDisconnect: () => {
       console.log("Disconnected from Eleven Labs");
-      setIsChatStarted(false);
+      setIsStarted(false);
     },
     onError: (error) => {
       console.error("Eleven Labs error:", error);
@@ -125,304 +65,293 @@ export default function ChatInterface({ teacher, knowledgeAreas, initialScore, o
         description: "We couldn't connect to the AI tutor. Please try again.",
         variant: "destructive",
       });
-      setIsChatStarted(false);
+      setIsStarted(false);
     },
     onMessage: (message) => {
-      // Handle incoming message from AI
-      if (message && typeof message === 'object') {
-        // Process different message types from the 11labs library
-        if ("message" in message && typeof message.message === 'string') {
-          setIsTyping(false);
-          setMessages(prev => [...prev, { message: message.message, source: "ai" }]);
-        }
+      if (message.final && message.type === "agent_response") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: "assistant",
+            content: message.text || "",
+            timestamp: new Date(),
+          },
+        ]);
+        setIsLoading(false);
       }
-    }
+    },
   });
 
-  // Auto-scroll to bottom when messages change
+  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleStartConversation = async () => {
-    if (isChatStarted) return;
-    
+  // Start the conversation with Eleven Labs
+  const startConversation = async () => {
     try {
-      setIsTyping(true);
-      setShowIntro(false);
+      setIsLoading(true);
+      
+      // Initial knowledge context to send to the agent
+      const initialContext = knowledgeNodes 
+        ? `Based on the initial assessment, the student shows these mastery levels: ${knowledgeNodes.map(node => `${node.nodeId}: ${node.mastery}%`).join(', ')}.` 
+        : "No initial assessment data available.";
       
       await conversation.startSession({
-        agentId: "8OPvpBZArqGy3fVZKjt1", // Using the provided agent ID
+        agentId: agentId,
         overrides: {
           tts: {
-            voiceId: teacher.voiceId,
+            voiceId: voiceId,
           },
           agent: {
-            firstMessage: `Hello, I'm ${teacher.name}. Based on your assessment, I'll focus on ${knowledgeAreas.join(", ")}. What would you like to learn about today?`,
+            firstMessage: initialContext,
           }
         },
       });
       
-      setIsChatStarted(true);
-      
-      toast({
-        title: "Connected to AI Tutor",
-        description: `You are now connected to ${teacher.name}`,
-      });
+      setIsStarted(true);
+      setIsLoading(false);
     } catch (error) {
       console.error("Failed to start conversation:", error);
-      setIsTyping(false);
       toast({
         title: "Connection Failed",
         description: "Could not connect to AI tutor. Please try again.",
         variant: "destructive",
       });
+      setIsLoading(false);
     }
   };
 
-  const handleEndConversation = async () => {
+  // End the conversation
+  const endConversation = async () => {
     try {
       await conversation.endSession();
-      setIsChatStarted(false);
+      setIsStarted(false);
     } catch (error) {
       console.error("Failed to end conversation:", error);
     }
   };
 
+  // Toggle mute
   const handleMuteToggle = () => {
     setIsMuted(!isMuted);
+    conversation.setVolume({ volume: isMuted ? 1 : 0 });
   };
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !isChatStarted) return;
-    
-    // Add message to chat
-    const userMessage = { message: inputMessage.trim(), source: "user" as const };
-    setMessages(prev => [...prev.concat(userMessage)]);
-    
-    // Clear input and show typing indicator
-    setInputMessage("");
-    setIsTyping(true);
-    
-    // Use simulated AI response (would be replaced by actual voice API response)
-    try {
-      // This would send the message to the Eleven Labs API
-      // In a full implementation, the AI's response would be handled via the onMessage callback
-      // For now, we'll simulate response timing
-      console.log("Sending message to 11labs:", inputMessage);
-    } catch (error) {
-      console.error("Error sending message:", error);
-      setIsTyping(false);
-      toast({
-        title: "Communication Error",
-        description: "Failed to send your message. Please try again.",
-        variant: "destructive",
-      });
+  // Handle user input
+  const handleUserInput = async () => {
+    if (!userInput.trim() || !isStarted) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: userInput,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+    setUserInput("");
+    setIsLoading(true);
+  };
+
+  // Format timestamp
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Reset conversation
+  const resetConversation = async () => {
+    if (isStarted) {
+      await endConversation();
     }
+    setMessages([]);
+    startConversation();
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  // Render animated waveform
-  const renderWaveform = () => {
-    return (
-      <div className="flex items-center gap-[2px] h-6">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div 
-            key={i}
-            className={`w-[3px] bg-primary rounded-full animate-pulse`}
-            style={{ 
-              height: `${Math.max(15, Math.min(24, 15 + Math.sin(i * 0.8) * 10))}px`,
-              animationDelay: `${i * 0.1}s`
-            }}
-          ></div>
-        ))}
-      </div>
-    );
-  };
-
-  // Build message display
-  const renderMessage = (msg: Message, index: number) => {
-    const isAi = msg.source === "ai";
+  // Export conversation
+  const exportConversation = () => {
+    const conversationText = messages
+      .map((msg) => `${msg.role === "user" ? "You" : teacherName} (${formatTime(msg.timestamp)}): ${msg.content}`)
+      .join("\n\n");
     
-    return (
-      <div 
-        key={index}
-        className={`flex gap-4 mb-6 ${isAi ? "animate-fade-in" : ""}`}
-      >
-        {isAi ? (
-          <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-            <img 
-              src={teacher.avatar} 
-              alt={teacher.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ) : (
-          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-            <UserCircle2 className="w-5 h-5 text-primary" />
-          </div>
-        )}
-        
-        <div className={`px-4 py-3 rounded-lg ${isAi ? "bg-secondary/20" : "bg-primary/10"}`}>
-          <div className="whitespace-pre-wrap">{msg.message}</div>
-        </div>
-      </div>
-    );
+    const blob = new Blob([conversationText], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `chat-with-${teacherName}-${new Date().toISOString().split("T")[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col">
-      <div className="flex items-center justify-between py-2 px-4 border-b">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="rounded-full"
-            onClick={onBack}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full overflow-hidden">
-              <img
-                src={teacher.avatar}
-                alt={teacher.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div>
-              <h2 className="text-sm font-medium leading-tight">{teacher.name}</h2>
-              <p className="text-xs text-muted-foreground leading-tight">{teacher.title}</p>
-            </div>
-            
-            {isChatStarted && conversation.isSpeaking && (
-              <div className="ml-2">
-                {renderWaveform()}
+    <div className="flex flex-col h-[80vh] bg-background border rounded-lg overflow-hidden">
+      {/* Header */}
+      <div className="p-4 border-b flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full overflow-hidden">
+            <img src={teacherAvatar} alt={teacherName} className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <h3 className="font-medium">{teacherName}</h3>
+            <p className="text-xs text-muted-foreground">JEE Physics Expert</p>
+          </div>
+          {conversation.isSpeaking && (
+            <div className="flex items-center ml-2">
+              <div className="flex gap-1">
+                <div className="w-1 h-3 bg-primary/70 rounded-full animate-pulse"></div>
+                <div className="w-1 h-4 bg-primary/80 rounded-full animate-pulse delay-75"></div>
+                <div className="w-1 h-2 bg-primary/60 rounded-full animate-pulse delay-150"></div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-        
-        {isChatStarted && (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleMuteToggle}
-              title={isMuted ? "Unmute" : "Mute"}
-              className="rounded-full h-8 w-8"
-            >
-              {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleEndConversation}
-              className="rounded-full"
-            >
-              End Session
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={handleMuteToggle} title={isMuted ? "Unmute" : "Mute"}>
+            {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          </Button>
+          <Button variant="outline" size="icon" onClick={resetConversation} title="Reset conversation">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={exportConversation} title="Export conversation">
+            <Download className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={endConversation} title="Close">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-      
-      <div className="flex-1 overflow-y-auto p-4 bg-background/80">
-        {showIntro ? (
-          <div className="h-full flex flex-col items-center justify-center text-center max-w-xl mx-auto px-4">
-            <h1 className="text-3xl font-bold mb-6">What do you want to study today?</h1>
-            
-            <div className="relative w-full mb-8">
-              <Input
-                placeholder="Ask anything..."
-                className="pr-20 py-6 text-lg bg-background/80 border border-primary/20 focus-visible:ring-primary"
-                value=""
-                disabled
-              />
-              <Button 
-                className="absolute right-1 top-1 rounded-full h-10 w-10 p-0"
-                onClick={handleStartConversation}
-              >
-                <Mic className="h-5 w-5" />
-              </Button>
+
+      {/* Chat messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-secondary/10">
+        {!isStarted && messages.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center">
+            <div className="w-20 h-20 rounded-full overflow-hidden mb-4">
+              <img src={teacherAvatar} alt={teacherName} className="w-full h-full object-cover" />
             </div>
-            
-            <div className="grid grid-cols-2 gap-3 w-full max-w-md">
-              {knowledgeAreas.map((area) => (
-                <Button
-                  key={area}
-                  variant="outline"
-                  className="justify-start h-auto py-4 px-4"
-                  onClick={handleStartConversation}
-                >
-                  <span>{area}</span>
-                </Button>
-              ))}
-            </div>
+            <h3 className="text-xl font-medium mb-2">{teacherName}</h3>
+            <p className="text-muted-foreground text-center max-w-md mb-6">
+              Start a conversation with your AI tutor to learn JEE Physics concepts, solve problems, and prepare for your exams.
+            </p>
+            <Button onClick={startConversation} disabled={isLoading}>
+              {isLoading ? "Connecting..." : "Start Conversation"}
+            </Button>
           </div>
         ) : (
           <>
-            {messages.map(renderMessage)}
-            
-            {isTyping && (
-              <div className="flex gap-4 mb-6">
-                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                  <img 
-                    src={teacher.avatar} 
-                    alt={teacher.name}
-                    className="w-full h-full object-cover"
-                  />
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${
+                  message.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background border"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+                      {message.role === "user" ? (
+                        <div className="w-full h-full flex items-center justify-center bg-white/10">
+                          <User className="h-4 w-4" />
+                        </div>
+                      ) : (
+                        <img
+                          src={teacherAvatar}
+                          alt={teacherName}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <span className="font-medium text-sm">
+                      {message.role === "user" ? "You" : teacherName}
+                    </span>
+                    <span className="text-xs opacity-70">{formatTime(message.timestamp)}</span>
+                  </div>
+                  <p className="whitespace-pre-wrap">{message.content}</p>
                 </div>
-                <div className="px-4 py-3 rounded-lg bg-secondary/20 flex items-center">
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                    <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }}></div>
-                    <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "600ms" }}></div>
+              </div>
+            ))}
+
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] rounded-lg p-4 bg-background border">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-6 h-6 rounded-full overflow-hidden">
+                      <img
+                        src={teacherAvatar}
+                        alt={teacherName}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className="font-medium text-sm">{teacherName}</span>
+                  </div>
+                  <div className="flex gap-1 items-center">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse delay-150"></div>
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse delay-300"></div>
                   </div>
                 </div>
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </>
         )}
       </div>
-      
-      {isChatStarted && (
+
+      {/* Input area */}
+      {isStarted && (
         <div className="p-4 border-t">
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder="Type your message..."
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="flex-1"
-              ref={inputRef}
-            />
-            <Button onClick={handleSendMessage} className="rounded-full h-10 w-10 p-0" disabled={!inputMessage.trim()}>
-              <Send className="h-4 w-4" />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <textarea
+                className="w-full p-3 pr-12 rounded-lg border resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Type your message..."
+                rows={1}
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleUserInput();
+                  }
+                }}
+                disabled={isLoading}
+              />
+              <Button
+                className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                size="icon"
+                variant="ghost"
+                onClick={handleUserInput}
+                disabled={!userInput.trim() || isLoading}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button
+              className={`${
+                conversation.isRecording ? "bg-red-500 hover:bg-red-600" : ""
+              }`}
+              size="icon"
+              variant="outline"
+            >
+              {conversation.isRecording ? (
+                <MicOff className="h-4 w-4" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
             </Button>
           </div>
-        </div>
-      )}
-      
-      {!isChatStarted && !showIntro && (
-        <div className="p-4 flex justify-center">
-          <Button 
-            onClick={handleStartConversation}
-            size="lg"
-            className="rounded-full px-8"
-          >
-            <Mic className="h-5 w-5 mr-2" />
-            Start Voice Session
-          </Button>
+          <div className="text-xs text-muted-foreground mt-2 text-center">
+            The AI tutor will only answer questions related to JEE Physics, Chemistry, and Mathematics.
+          </div>
         </div>
       )}
     </div>

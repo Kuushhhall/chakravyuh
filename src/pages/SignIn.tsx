@@ -2,104 +2,199 @@
 import { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { Container } from "@/components/ui/container";
+import { PageHeader } from "@/components/ui/page-header";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui-custom/Card";
 import { Button } from "@/components/ui-custom/Button";
-import { Link, useNavigate } from "react-router-dom";
-import { Mail, Phone } from "lucide-react";
-import { SignInOption } from "@/components/SignInOptions";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { SignInOptions } from "@/components/SignInOptions";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
+import { FcGoogle } from "react-icons/fc";
 
-const SignIn = () => {
-  const [loading, setLoading] = useState<{
-    google?: boolean;
-    email?: boolean;
-    phone?: boolean;
-  }>({});
-  const navigate = useNavigate();
-  const { signInWithGoogle } = useAuth();
+export default function SignIn() {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  const { user, signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
+  const { toast } = useToast();
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (isSignUp) {
+        if (!name) {
+          toast({
+            title: "Name required",
+            description: "Please enter your name to sign up",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+        await signUpWithEmail(email, password, name);
+      } else {
+        await signInWithEmail(email, password);
+      }
+    } catch (error) {
+      console.error("Authentication error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     try {
-      setLoading({ google: true });
+      setLoading(true);
       await signInWithGoogle();
     } catch (error) {
-      console.error("Google sign in error:", error);
-    } finally {
-      setLoading({ google: false });
+      console.error("Google Sign-in error:", error);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 flex items-center justify-center py-10">
-        <div className="w-full max-w-md px-4 mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
-            <p className="text-muted-foreground">Sign in to continue your learning journey</p>
-          </div>
-
-          {!isSupabaseConfigured && (
-            <div className="mb-6 p-3 border border-yellow-300 bg-yellow-50 rounded-md flex items-center gap-2 text-sm text-yellow-800">
-              <p>
-                Authentication is in demo mode. Click any option to proceed without actual authentication.
-              </p>
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <SignInOption
-              icon={
-                <svg width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18.171 8.368h-.67v-.035H10v3.333h4.709A4.998 4.998 0 0 1 5 10a5 5 0 0 1 5-5c1.275 0 2.434.48 3.317 1.268l2.357-2.357A8.295 8.295 0 0 0 10 1.667a8.334 8.334 0 1 0 8.171 6.7Z" fill="#FFC107" />
-                  <path d="M2.628 6.121 5.366 8.13A4.998 4.998 0 0 1 10 5c1.275 0 2.434.482 3.317 1.268l2.357-2.357A8.295 8.295 0 0 0 10 1.667a8.329 8.329 0 0 0-7.372 4.454Z" fill="#FF3D00" />
-                  <path d="M10 18.333a8.294 8.294 0 0 0 5.587-2.163l-2.579-2.183A4.963 4.963 0 0 1 10 15a4.998 4.998 0 0 1-4.701-3.333L2.58 13.783A8.327 8.327 0 0 0 10 18.333Z" fill="#4CAF50" />
-                  <path d="M18.171 8.368H17.5v-.034H10v3.333h4.71a5.017 5.017 0 0 1-1.703 2.321l2.58 2.182c-.182.166 2.746-2.003 2.746-6.17 0-.559-.057-1.104-.162-1.632Z" fill="#1976D2" />
-                </svg>
-              }
-              text="Continue with Google"
-              onClick={handleGoogleSignIn}
-              loading={loading.google}
-            />
-
-            <Link to="/email-signin">
-              <SignInOption
-                icon={<Mail className="h-5 w-5 text-gray-600" />}
-                text="Continue with Email"
-                onClick={() => {}}
-                loading={loading.email}
-              />
-            </Link>
-
-            <Link to="/phone-signin">
-              <SignInOption
-                icon={<Phone className="h-5 w-5 text-gray-600" />}
-                text="Continue with Phone"
-                onClick={() => {}}
-                loading={loading.phone}
-              />
-            </Link>
-          </div>
-
-          <div className="mt-8 text-center text-sm text-muted-foreground">
-            <p>
-              By continuing, you agree to our{" "}
-              <Link to="/terms" className="text-primary hover:underline">
-                Terms of Service
-              </Link>{" "}
-              and{" "}
-              <Link to="/privacy" className="text-primary hover:underline">
-                Privacy Policy
-              </Link>
-              .
-            </p>
-          </div>
-        </div>
+      <main className="flex-1 py-12">
+        <Container className="max-w-md">
+          <PageHeader 
+            title={isSignUp ? "Create an Account" : "Welcome Back"} 
+            description={isSignUp ? "Sign up to start your JEE preparation journey" : "Sign in to continue your JEE preparation"} 
+            className="text-center"
+          />
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-center">{isSignUp ? "Sign Up" : "Sign In"}</CardTitle>
+              <CardDescription className="text-center">
+                {isSignUp
+                  ? "Create your account to get started"
+                  : "Enter your credentials to access your account"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {isSignUp && (
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Enter your name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required={isSignUp}
+                    />
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    {!isSignUp && (
+                      <Link to="/reset-password" className="text-xs text-primary hover:underline">
+                        Forgot password?
+                      </Link>
+                    )}
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder={isSignUp ? "Create a password" : "Enter your password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading
+                    ? "Loading..."
+                    : isSignUp
+                    ? "Create Account"
+                    : "Sign In"}
+                </Button>
+              </form>
+              
+              <div className="mt-6">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white dark:bg-gray-900 text-muted-foreground">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="mt-6">
+                  <Button
+                    variant="outline"
+                    className="w-full flex items-center justify-center gap-2"
+                    onClick={handleGoogleSignIn}
+                    disabled={loading}
+                  >
+                    <FcGoogle className="w-5 h-5" />
+                    <span>Google</span>
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="mt-6 text-center text-sm">
+                {isSignUp ? (
+                  <p>
+                    Already have an account?{" "}
+                    <button
+                      type="button"
+                      className="font-medium text-primary hover:underline"
+                      onClick={() => setIsSignUp(false)}
+                    >
+                      Sign in
+                    </button>
+                  </p>
+                ) : (
+                  <p>
+                    Don't have an account?{" "}
+                    <button
+                      type="button"
+                      className="font-medium text-primary hover:underline"
+                      onClick={() => setIsSignUp(true)}
+                    >
+                      Sign up
+                    </button>
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </Container>
       </main>
       <Footer />
     </div>
   );
-};
-
-export default SignIn;
+}

@@ -1,338 +1,237 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui-custom/Card";
 import { Button } from "@/components/ui-custom/Button";
-import { PageHeader } from "@/components/ui/page-header";
-import { ArrowLeft, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui-custom/Progress";
+import { useToast } from "@/hooks/use-toast";
 
-type Teacher = {
-  id: string;
-  name: string;
-  title: string;
-  avatar: string;
-  description: string;
-  subjects: string[];
-  voiceId: string;
-};
-
-type Question = {
+interface Question {
   id: number;
-  text: string;
+  question: string;
   options: string[];
-  correctAnswer: string;
-  concept: string;
-};
-
-interface PrerequisiteQuizProps {
-  teacher: Teacher;
-  onComplete: (results: {score: number, knowledgeAreas: string[]}) => void;
-  onBack: () => void;
+  correctAnswer: number;
+  topic: string;
+  difficulty: "easy" | "medium" | "hard";
+  conceptNode: string;
 }
 
-// Physics knowledge areas that will be assessed
-const physicsKnowledgeAreas = [
-  "Mechanics",
-  "Electromagnetism",
-  "Thermodynamics",
-  "Optics",
-  "Modern Physics",
-  "Fluid Mechanics",
-  "Waves and Oscillations",
-  "Units and Measurement",
-  "Kinematics",
-  "Laws of Motion"
+interface QuizProps {
+  subject: string;
+  onComplete: (results: {
+    score: number;
+    knowledgeNodes: {
+      nodeId: string;
+      mastery: number;
+    }[];
+  }) => void;
+}
+
+// Sample physics questions for the prerequisite assessment
+const physicsQuestions: Question[] = [
+  {
+    id: 1,
+    question: "Which of the following is the correct formula for calculating kinetic energy?",
+    options: ["KE = mgh", "KE = 1/2 * mv²", "KE = 1/2 * kx²", "KE = P/V"],
+    correctAnswer: 1,
+    topic: "Mechanics",
+    difficulty: "easy",
+    conceptNode: "kinetic-energy",
+  },
+  {
+    id: 2,
+    question: "A body of mass m is projected with velocity v at an angle θ with the horizontal. The time of flight is:",
+    options: ["2v sin θ / g", "v sin θ / g", "2v cos θ / g", "v cos θ / g"],
+    correctAnswer: 0,
+    topic: "Mechanics",
+    difficulty: "medium",
+    conceptNode: "projectile-motion",
+  },
+  {
+    id: 3,
+    question: "The dimensional formula for angular momentum is:",
+    options: ["[MLT−1]", "[ML²T−1]", "[ML²T−2]", "[ML²T−3]"],
+    correctAnswer: 1,
+    topic: "Units and Dimensions",
+    difficulty: "medium",
+    conceptNode: "angular-momentum",
+  },
+  {
+    id: 4,
+    question: "The electric field inside a charged conducting sphere is:",
+    options: ["Zero", "Proportional to radius", "Inversely proportional to radius", "Constant"],
+    correctAnswer: 0,
+    topic: "Electrostatics",
+    difficulty: "medium",
+    conceptNode: "electric-field",
+  },
+  {
+    id: 5,
+    question: "Which of the following is NOT a conservative force?",
+    options: ["Gravitational force", "Electrostatic force", "Magnetic force on a moving charge", "Elastic spring force"],
+    correctAnswer: 2,
+    topic: "Work, Energy and Power",
+    difficulty: "hard",
+    conceptNode: "conservative-forces",
+  },
 ];
 
-// Dynamic question generation function (simplified for demonstration)
-const generateQuestions = (): Question[] => {
-  // In a real implementation, this would use an AI service to generate questions
-  // For now, we'll use predefined questions that shuffle
-  const questionPool = [
-    {
-      id: 1,
-      text: "What is the SI unit of force?",
-      options: ["Newton", "Joule", "Watt", "Pascal"],
-      correctAnswer: "Newton",
-      concept: "Mechanics"
-    },
-    {
-      id: 2,
-      text: "Which of the following is a scalar quantity?",
-      options: ["Velocity", "Force", "Energy", "Momentum"],
-      correctAnswer: "Energy",
-      concept: "Mechanics"
-    },
-    {
-      id: 3,
-      text: "What is the principle behind electromagnetic induction?",
-      options: [
-        "Law of conservation of energy",
-        "Changing magnetic field produces electric field",
-        "Electric charges always flow from high to low potential",
-        "Like charges attract each other"
-      ],
-      correctAnswer: "Changing magnetic field produces electric field",
-      concept: "Electromagnetism"
-    },
-    {
-      id: 4, 
-      text: "Which lens is used to correct myopia?",
-      options: ["Convex lens", "Concave lens", "Bifocal lens", "Cylindrical lens"],
-      correctAnswer: "Concave lens",
-      concept: "Optics"
-    },
-    {
-      id: 5,
-      text: "What does the first law of thermodynamics state?",
-      options: [
-        "Heat always flows from hot to cold objects",
-        "The total entropy of an isolated system always increases",
-        "Energy can neither be created nor destroyed",
-        "The efficiency of a heat engine can never be 100%"
-      ],
-      correctAnswer: "Energy can neither be created nor destroyed",
-      concept: "Thermodynamics"
-    },
-    {
-      id: 6,
-      text: "What is the formula for kinetic energy?",
-      options: ["½mv²", "mgh", "F=ma", "P=F/A"],
-      correctAnswer: "½mv²",
-      concept: "Mechanics"
-    },
-    {
-      id: 7,
-      text: "Which phenomenon proves the wave nature of light?",
-      options: ["Photoelectric effect", "Interference", "Compton effect", "Pair production"],
-      correctAnswer: "Interference",
-      concept: "Optics"
-    },
-    {
-      id: 8,
-      text: "In an LCR circuit at resonance, what is true?",
-      options: [
-        "Current is maximum", 
-        "Current is minimum", 
-        "Impedance is infinite", 
-        "Power factor is zero"
-      ],
-      correctAnswer: "Current is maximum",
-      concept: "Electromagnetism"
-    }
-  ];
-  
-  // Shuffle and select 5 questions
-  const shuffled = [...questionPool].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, 5);
-};
-
-export default function PrerequisiteQuiz({ teacher, onComplete, onBack }: PrerequisiteQuizProps) {
-  const [questions, setQuestions] = useState<Question[]>([]);
+export function PrerequisiteQuiz({ subject, onComplete }: QuizProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<{[key: number]: string}>({});
-  const [score, setScore] = useState(0);
+  const [answers, setAnswers] = useState<number[]>(Array(physicsQuestions.length).fill(-1));
   const [showResult, setShowResult] = useState(false);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    // Simulate AI generating questions
-    const timer = setTimeout(() => {
-      setQuestions(generateQuestions());
-      setLoading(false);
-    }, 1500);
-    
-    return () => clearTimeout(timer);
-  }, []);
-  
-  const handleAnswer = (answer: string) => {
-    const newAnswers = { ...answers, [currentQuestion]: answer };
+  const { toast } = useToast();
+
+  const handleSelectAnswer = (optionIndex: number) => {
+    const newAnswers = [...answers];
+    newAnswers[currentQuestion] = optionIndex;
     setAnswers(newAnswers);
-    
-    // Check if correct
-    if (answer === questions[currentQuestion].correctAnswer) {
-      setScore(prev => prev + 1);
+  };
+
+  const handleNextQuestion = () => {
+    if (answers[currentQuestion] === -1) {
+      toast({
+        title: "Please select an answer",
+        description: "You need to select an option before proceeding",
+        variant: "destructive",
+      });
+      return;
     }
-    
-    // Move to next question or show results
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(prev => prev + 1);
+
+    if (currentQuestion < physicsQuestions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
     } else {
-      setShowResult(true);
+      calculateResults();
     }
   };
-  
-  const handleComplete = () => {
-    // Analyze quiz to determine knowledge areas
-    // In a real implementation, this would use ML/GNN to determine areas of strength/weakness
-    const knownAreas = score >= 3 
-      ? physicsKnowledgeAreas.slice(0, 4) 
-      : physicsKnowledgeAreas.slice(4, 6);
-    
-    onComplete({
-      score,
-      knowledgeAreas: knownAreas
-    });
+
+  const handlePreviousQuestion = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
+    }
   };
-  
-  if (loading) {
-    return (
-      <div className="max-w-3xl mx-auto py-10 px-4">
-        <div className="flex items-center gap-2 mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="rounded-full"
-            onClick={onBack}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-        </div>
-        
-        <Card>
-          <CardContent className="p-8 flex flex-col items-center justify-center min-h-[400px]">
-            <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-            <h3 className="text-xl font-medium mb-2">Generating personalized questions</h3>
-            <p className="text-muted-foreground text-center max-w-md">
-              Our AI is analyzing the JEE syllabus to create relevant questions to assess your current knowledge level...
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-  
+
+  const calculateResults = () => {
+    // Calculate the score
+    const score = answers.reduce((total, answer, index) => {
+      return answer === physicsQuestions[index].correctAnswer ? total + 1 : total;
+    }, 0);
+
+    // Calculate mastery level for each concept node
+    const knowledgeNodes = physicsQuestions.map((question, index) => {
+      const correct = answers[index] === question.correctAnswer;
+      return {
+        nodeId: question.conceptNode,
+        mastery: correct ? (question.difficulty === "easy" ? 70 : question.difficulty === "medium" ? 80 : 90) : 30,
+      };
+    });
+
+    setShowResult(true);
+    onComplete({ score, knowledgeNodes });
+  };
+
+  const currentQuestionData = physicsQuestions[currentQuestion];
+  const progress = ((currentQuestion + 1) / physicsQuestions.length) * 100;
+
   if (showResult) {
+    const score = answers.reduce((total, answer, index) => {
+      return answer === physicsQuestions[index].correctAnswer ? total + 1 : total;
+    }, 0);
+    
+    const percentage = Math.round((score / physicsQuestions.length) * 100);
+
     return (
-      <div className="max-w-3xl mx-auto py-10 px-4">
-        <PageHeader
-          title="Quiz Results"
-          description={`You scored ${score} out of ${questions.length}`}
-        />
-        
-        <Card className="overflow-hidden mb-6">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between border-b pb-4 mb-4">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary">
-                  <img
-                    src={teacher.avatar}
-                    alt={teacher.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium">{teacher.name}</h3>
-                  <p className="text-sm text-muted-foreground">{teacher.title}</p>
-                </div>
-              </div>
-              <div className="px-4 py-1 bg-primary/10 text-primary rounded-full font-medium">
-                {score}/{questions.length}
-              </div>
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-6">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Assessment Complete!</h2>
+            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-primary/10 mb-4">
+              <span className="text-2xl font-bold">{percentage}%</span>
             </div>
-            
-            <div className="space-y-4">
-              {questions.map((question, index) => (
-                <div key={question.id} className="border-b pb-4 last:border-0">
-                  <div className="flex justify-between items-center mb-1">
-                    <h4 className="font-medium">Question {index + 1}</h4>
-                    {answers[index] === question.correctAnswer ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-red-500" />
-                    )}
-                  </div>
-                  <p className="text-sm mb-2">{question.text}</p>
-                  <div className="text-xs text-muted-foreground flex justify-between">
-                    <span>Your answer: {answers[index]}</span>
-                    {answers[index] !== question.correctAnswer && (
-                      <span className="text-green-500">Correct: {question.correctAnswer}</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <div className="text-center">
-          <Button size="lg" onClick={handleComplete}>
-            Start Learning Session
-          </Button>
-        </div>
-      </div>
-    );
-  }
-  
-  return (
-    <div className="max-w-3xl mx-auto py-10 px-4">
-      <div className="flex items-center gap-2 mb-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="rounded-full"
-          onClick={onBack}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-      </div>
-      
-      <Card>
-        <CardContent className="p-8">
-          <div className="flex items-center gap-4 mb-8 border-b pb-4">
-            <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary">
-              <img
-                src={teacher.avatar}
-                alt={teacher.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div>
-              <h3 className="text-lg font-medium">{teacher.name}</h3>
-              <p className="text-sm text-muted-foreground">
-                Let's assess your knowledge before we begin
-              </p>
-            </div>
-          </div>
-          
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-sm font-medium">Question {currentQuestion + 1} of {questions.length}</span>
-              <span className="text-sm text-muted-foreground">{questions[currentQuestion]?.concept}</span>
-            </div>
-            
-            <h2 className="text-xl font-medium mb-6">{questions[currentQuestion]?.text}</h2>
-            
-            <div className="space-y-3">
-              {questions[currentQuestion]?.options.map((option) => (
-                <Button 
-                  key={option}
-                  variant="outline"
-                  className="w-full justify-start h-auto py-3 px-4 text-left"
-                  onClick={() => handleAnswer(option)}
-                >
-                  {option}
-                </Button>
-              ))}
-            </div>
-          </div>
-          
-          <div className="mt-8 pt-4 border-t">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                {currentQuestion + 1} of {questions.length} questions
-              </div>
-              <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-primary rounded-full"
-                  style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
-                ></div>
-              </div>
-            </div>
+            <p className="mb-6">
+              You scored {score} out of {physicsQuestions.length} questions correctly.
+            </p>
+            <p className="text-muted-foreground mb-4">
+              Based on your assessment, we'll create a personalized learning path for you.
+            </p>
           </div>
         </CardContent>
       </Card>
-    </div>
+    );
+  }
+
+  return (
+    <Card className="max-w-2xl mx-auto">
+      <CardContent className="p-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold mb-4">Prerequisite Assessment: {subject}</h2>
+          <p className="text-muted-foreground mb-4">
+            Answer these questions to help us understand your current knowledge level.
+          </p>
+          <div className="mb-2 flex justify-between text-sm">
+            <span>Question {currentQuestion + 1} of {physicsQuestions.length}</span>
+            <span>{Math.round(progress)}% complete</span>
+          </div>
+          <Progress value={progress} className="h-2" />
+        </div>
+
+        <div className="mb-8">
+          <h3 className="text-lg font-medium mb-4">{currentQuestionData.question}</h3>
+          <div className="space-y-3">
+            {currentQuestionData.options.map((option, index) => (
+              <div
+                key={index}
+                className={`p-3 border rounded-md cursor-pointer transition-all ${
+                  answers[currentQuestion] === index
+                    ? "border-primary bg-primary/5"
+                    : "hover:border-primary/50"
+                }`}
+                onClick={() => handleSelectAnswer(index)}
+              >
+                <div className="flex items-center">
+                  <div
+                    className={`w-5 h-5 rounded-full border flex items-center justify-center mr-3 ${
+                      answers[currentQuestion] === index
+                        ? "border-primary bg-primary text-white"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {answers[currentQuestion] === index && (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="w-3 h-3"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                  <span>{option}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={handlePreviousQuestion}
+            disabled={currentQuestion === 0}
+          >
+            Previous
+          </Button>
+          <Button onClick={handleNextQuestion}>
+            {currentQuestion < physicsQuestions.length - 1 ? "Next" : "Finish"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,8 +1,7 @@
-
+@import url('./styles/design-system.css');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import url('./styles/design-system.css');
 
 @layer base {
   :root {
